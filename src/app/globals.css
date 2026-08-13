@@ -94,6 +94,22 @@
   color: #92400e;
 }
 
+.post-content h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  font-family: var(--font-serif);
+  color: #2c2c2c;
+  margin: 2.5rem 0 1rem;
+}
+
+.post-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5rem auto;
+  border-radius: 0.75rem;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
