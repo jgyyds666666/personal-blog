@@ -1,48 +1,7 @@
 import { NextResponse } from 'next/server';
-import {
-  getPublishedPosts,
-  createPost,
-  getAllPosts,
-} from '@/lib/posts-service';
+import { revalidatePath } from 'next/cache';
+import { getPublishedPosts, createPost, getAllPosts, getPostBySlugAnyStatus } from '@/lib/posts-service';
+import { validatePostInput } from '@/lib/post-validation';
 
-// GET /api/posts - 获取文章列表
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const all = searchParams.get('all') === 'true';
-
-    const posts = all ? await getAllPosts() : await getPublishedPosts();
-
-    return NextResponse.json({ success: true, data: posts });
-  } catch (error) {
-    console.error('获取文章列表失败:', error);
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/posts - 创建新文章
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-
-    if (!body.slug || !body.title || !body.content) {
-      return NextResponse.json(
-        { success: false, error: 'slug、title 和 content 为必填字段' },
-        { status: 400 }
-      );
-    }
-
-    const post = await createPost(body);
-
-    return NextResponse.json({ success: true, data: post }, { status: 201 });
-  } catch (error) {
-    console.error('创建文章失败:', error);
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
-  }
-}
+export async function GET(request: Request) { try { const all = new URL(request.url).searchParams.get('all') === 'true'; return NextResponse.json({ success: true, data: all ? await getAllPosts() : await getPublishedPosts() }); } catch (error) { return NextResponse.json({ success: false, error: error instanceof Error ? error.message : '文章加载失败。' }, { status: 500 }); } }
+export async function POST(request: Request) { try { const validation = validatePostInput(await request.json()); if (!validation.data) return NextResponse.json({ success: false, error: validation.error }, { status: 400 }); if (await getPostBySlugAnyStatus(validation.data.slug)) return NextResponse.json({ success: false, error: '这个 slug 已经存在，请换一个。' }, { status: 409 }); const post = await createPost(validation.data); if (post.status === 'published') { revalidatePath('/'); revalidatePath(`/posts/${post.slug}`); } return NextResponse.json({ success: true, data: post }, { status: 201 }); } catch (error) { return NextResponse.json({ success: false, error: error instanceof Error ? error.message : '保存失败，请稍后重试。' }, { status: 500 }); } }

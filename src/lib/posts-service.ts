@@ -62,6 +62,13 @@ export async function getPostBySlug(slug: string): Promise<PostWithUrl | null> {
   return data as PostWithUrl;
 }
 
+export async function getPostBySlugAnyStatus(slug: string): Promise<PostWithUrl | null> {
+  const client = getSupabaseClient();
+  const { data, error } = await client.from('posts').select('*').eq('slug', slug).maybeSingle();
+  if (error) throw new Error(`获取文章失败: ${error.message}`);
+  return (data as PostWithUrl | null) ?? null;
+}
+
 /**
  * 根据 ID 获取文章
  */
