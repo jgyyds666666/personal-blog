@@ -1,15 +1,27 @@
 'use client';
 
 import { useCallback, useRef, useState, type ChangeEvent } from 'react';
+import { Bold, Braces, Code2, Eye, Heading1, Heading2, Heading3, ImagePlus, Italic, Link2, List, ListOrdered, PencilLine, Quote, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 interface MarkdownEditorProps { value: string; onChange: (value: string) => void; placeholder?: string; }
-const toolbarButtons = [
-  ['H1', 'heading-1', '一级标题'], ['H2', 'heading-2', '二级标题'], ['H3', 'heading-3', '三级标题'],
-  ['B', 'bold', '加粗'], ['I', 'italic', '斜体'], ['❝', 'quote', '引用'], ['•', 'unordered-list', '无序列表'],
-  ['1.', 'ordered-list', '有序列表'], ['<>', 'code', '行内代码'], ['{}', 'codeblock', '代码块'], ['↗', 'link', '链接'], ['图片', 'image', '插入图片'],
-] as const;
+interface ToolbarButton { action: string; label: string; title: string; icon: LucideIcon; }
+
+const toolbarButtons: ToolbarButton[] = [
+  { action: 'heading-1', label: 'H1', title: '一级标题', icon: Heading1 },
+  { action: 'heading-2', label: 'H2', title: '二级标题', icon: Heading2 },
+  { action: 'heading-3', label: 'H3', title: '三级标题', icon: Heading3 },
+  { action: 'bold', label: 'B', title: '加粗', icon: Bold },
+  { action: 'italic', label: 'I', title: '斜体', icon: Italic },
+  { action: 'quote', label: '引用', title: '引用', icon: Quote },
+  { action: 'unordered-list', label: '列表', title: '无序列表', icon: List },
+  { action: 'ordered-list', label: '编号', title: '有序列表', icon: ListOrdered },
+  { action: 'code', label: '代码', title: '行内代码', icon: Code2 },
+  { action: 'codeblock', label: '代码块', title: '代码块', icon: Braces },
+  { action: 'link', label: '链接', title: '插入链接', icon: Link2 },
+  { action: 'image', label: '图片', title: '插入图片', icon: ImagePlus },
+];
 
 export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,8 +62,9 @@ export function MarkdownEditor({ value, onChange, placeholder }: MarkdownEditorP
     finally { setIsUploading(false); event.target.value = ''; }
   }
 
-  return <div className="overflow-hidden rounded-lg border border-[#e7e2d8] bg-white"><div className="flex flex-nowrap items-center gap-1 overflow-x-auto border-b border-[#e7e2d8] bg-[#faf8f5] p-2">{toolbarButtons.map(([label, action, title]) => <button key={action} type="button" onClick={() => handleAction(action)} title={title} disabled={isUploading && action === 'image'} className="flex h-8 min-w-8 shrink-0 items-center justify-center rounded px-1.5 text-xs font-medium text-[#4b5563] transition-colors hover:bg-[#e7e2d8] disabled:opacity-50">{label}</button>)}<span className="min-w-3 flex-1" /><Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => setShowPreview((current) => !current)}>{showPreview ? '返回编辑' : '预览'}</Button></div><div className="relative">{showPreview ? <div className="post-content min-h-[400px] overflow-auto p-4" dangerouslySetInnerHTML={{ __html: renderPreview(value) }} /> : <Textarea ref={textareaRef} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder || '开始写作…'} className="min-h-[400px] resize-y border-0 p-4 font-mono text-sm leading-relaxed focus-visible:ring-0" />}{isUploading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-[#6b7280]">图片上传中…</div>}</div><div className="flex items-center justify-between border-t border-[#e7e2d8] px-4 py-2 text-xs text-[#9ca3af]"><span>{value.length.toLocaleString()} 字符</span><span>Markdown</span></div><input ref={fileInputRef} type="file" accept="image/*" onChange={(event) => void handleImageUpload(event)} className="hidden" /></div>;
+  return <div className="overflow-hidden rounded-lg border border-[#e7e2d8] bg-white"><div className="flex flex-nowrap items-center gap-1 overflow-x-auto border-b border-[#e7e2d8] bg-[#faf8f5] p-2"><div className="flex shrink-0 items-center gap-0.5">{toolbarButtons.slice(0, 3).map((button) => <ToolbarItem key={button.action} button={button} onClick={handleAction} disabled={isUploading} />)}</div><span className="mx-1 h-5 w-px shrink-0 bg-[#e7e2d8]" /><div className="flex shrink-0 items-center gap-0.5">{toolbarButtons.slice(3, 5).map((button) => <ToolbarItem key={button.action} button={button} onClick={handleAction} disabled={isUploading} />)}</div><span className="mx-1 h-5 w-px shrink-0 bg-[#e7e2d8]" /><div className="flex shrink-0 items-center gap-0.5">{toolbarButtons.slice(5).map((button) => <ToolbarItem key={button.action} button={button} onClick={handleAction} disabled={isUploading} />)}</div><span className="min-w-3 flex-1" /><Button type="button" variant="ghost" size="sm" className="h-8 shrink-0 gap-1.5 text-xs" onClick={() => setShowPreview((current) => !current)}>{showPreview ? <PencilLine className="size-3.5" /> : <Eye className="size-3.5" />}{showPreview ? '返回编辑' : '预览'}</Button></div><div className="relative">{showPreview ? <div className="post-content min-h-[400px] overflow-auto p-4" dangerouslySetInnerHTML={{ __html: renderPreview(value) }} /> : <Textarea ref={textareaRef} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder || '开始写作…'} className="min-h-[400px] resize-y border-0 p-4 font-mono text-sm leading-relaxed focus-visible:ring-0" />}{isUploading && <div className="absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-[#6b7280]">图片上传中…</div>}</div><div className="flex items-center justify-between border-t border-[#e7e2d8] px-4 py-2 text-xs text-[#9ca3af]"><span>{value.length.toLocaleString()} 字符</span><span>Markdown</span></div><input ref={fileInputRef} type="file" accept="image/*" onChange={(event) => void handleImageUpload(event)} className="hidden" /></div>;
 }
 
+function ToolbarItem({ button, onClick, disabled }: { button: ToolbarButton; onClick: (action: string) => void; disabled: boolean }) { const Icon = button.icon; return <button type="button" onClick={() => onClick(button.action)} title={button.title} aria-label={button.title} disabled={disabled} className="group flex h-8 min-w-8 shrink-0 items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-[#57534e] transition-colors hover:bg-[#e7e2d8] hover:text-[#b45309] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b45309]/30 disabled:opacity-50"><Icon className="size-3.5" strokeWidth={1.8} /><span className="hidden whitespace-nowrap lg:inline">{button.label}</span></button>; }
 function renderPreview(text: string): string { let html = escapeHtml(text.trim()); html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>').replace(/`([^`]+)`/g, '<code>$1</code>').replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>').replace(/^- (.*)$/gm, '<li>$1</li>'); return html.split(/\n\s*\n/).map((part) => { const trimmed = part.trim(); if (!trimmed) return ''; if (/^<(h1|h2|h3|pre|blockquote|li|img)/.test(trimmed)) return trimmed; return `<p>${trimmed.replace(/\n/g, ' ')}</p>`; }).join('\n'); }
 function escapeHtml(text: string): string { return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
