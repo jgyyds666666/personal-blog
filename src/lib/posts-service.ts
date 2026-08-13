@@ -5,6 +5,18 @@ export interface PostWithUrl extends Omit<Post, 'cover_image_key'> {
   cover_image_url?: string;
 }
 
+export async function checkPostsDataSource(): Promise<void> {
+  const client = getSupabaseClient();
+  const { error } = await client
+    .from('posts')
+    .select('id', { head: true, count: 'exact' })
+    .limit(1);
+
+  if (error) {
+    throw new Error(`文章数据库连接失败: ${error.message}`);
+  }
+}
+
 /**
  * 获取所有已发布的文章（按创建时间倒序）
  */

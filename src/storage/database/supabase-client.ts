@@ -9,6 +9,18 @@ interface SupabaseCredentials {
   anonKey: string;
 }
 
+interface SupabaseConfiguration {
+  configured: boolean;
+  missing: string[];
+}
+
+export class SupabaseConfigurationError extends Error {
+  constructor(missing: string[]) {
+    super(`Supabase environment variables are missing: ${missing.join(', ')}`);
+    this.name = 'SupabaseConfigurationError';
+  }
+}
+
 function loadEnv(): void {
   if (envLoaded || (process.env.COZE_SUPABASE_URL && process.env.COZE_SUPABASE_ANON_KEY)) {
     return;
@@ -68,20 +80,29 @@ except Exception as e:
   }
 }
 
-function getSupabaseCredentials(): SupabaseCredentials {
+export function getSupabaseConfiguration(): SupabaseConfiguration {
   loadEnv();
 
   const url = process.env.COZE_SUPABASE_URL;
   const anonKey = process.env.COZE_SUPABASE_ANON_KEY;
+  const missing = [
+    !url && 'COZE_SUPABASE_URL',
+    !anonKey && 'COZE_SUPABASE_ANON_KEY',
+  ].filter((value): value is string => Boolean(value));
 
-  if (!url) {
-    throw new Error('COZE_SUPABASE_URL is not set');
-  }
-  if (!anonKey) {
-    throw new Error('COZE_SUPABASE_ANON_KEY is not set');
+  return { configured: missing.length === 0, missing };
+}
+
+function getSupabaseCredentials(): SupabaseCredentials {
+  const configuration = getSupabaseConfiguration();
+  if (!configuration.configured) {
+    throw new SupabaseConfigurationError(configuration.missing);
   }
 
-  return { url, anonKey };
+  const url = process.env.COZE_SUPABASE_URL;
+  const anonKey = process.env.COZE_SUPABASE_ANON_KEY;
+
+  return { url: url as string, anonKey: anonKey as string };
 }
 
 function getSupabaseServiceRoleKey(): string | undefined {
