@@ -1,183 +1,23 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-interface PostItem {
-  id: string;
-  slug: string;
-  title: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+interface PostItem { id: string; slug: string; title: string; status: 'draft' | 'published'; created_at: string; updated_at: string; }
 
 export default function AdminPage() {
   const [posts, setPosts] = useState<PostItem[]>([]);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState<'all' | 'published' | 'draft'>('all');
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
   const router = useRouter();
-
-  const fetchPosts = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/posts?all=true');
-      const result = await res.json();
-      if (result.success) {
-        setPosts(result.data);
-      }
-    } catch (err) {
-      console.error('获取文章列表失败:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这篇文章吗？此操作不可撤销。')) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/posts/${id}`, {
-        method: 'DELETE',
-      });
-      const result = await res.json();
-      if (result.success) {
-        setPosts(posts.filter((p) => p.id !== id));
-      } else {
-        alert(`删除失败: ${result.error}`);
-      }
-    } catch (err) {
-      alert(`删除失败: ${(err as Error).message}`);
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-serif font-bold text-[#2c2c2c]">
-            文章管理
-          </h1>
-          <p className="text-sm text-[#6b7280] mt-1">
-            共 {posts.length} 篇文章
-          </p>
-        </div>
-        <Button
-          onClick={() => router.push('/admin/new')}
-          className="bg-[#b45309] hover:bg-[#92400e] text-white"
-        >
-          新建文章
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-12 text-[#6b7280]">加载中...</div>
-      ) : posts.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-[#6b7280] mb-4">还没有文章</p>
-          <Button
-            onClick={() => router.push('/admin/new')}
-            className="bg-[#b45309] hover:bg-[#92400e] text-white"
-          >
-            写第一篇文章
-          </Button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg border border-[#e7e2d8] overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-[#faf8f5] border-b border-[#e7e2d8]">
-                <th className="text-left px-4 py-3 text-sm font-medium text-[#4b5563]">
-                  标题
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-[#4b5563] w-24">
-                  状态
-                </th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-[#4b5563] w-44">
-                  更新时间
-                </th>
-                <th className="text-right px-4 py-3 text-sm font-medium text-[#4b5563] w-32">
-                  操作
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.map((post) => (
-                <tr
-                  key={post.id}
-                  className="border-b border-[#e7e2d8] last:border-b-0 hover:bg-[#faf8f5]/50 transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/admin/edit/${post.id}`}
-                      className="text-[#2c2c2c] hover:text-[#b45309] font-medium"
-                    >
-                      {post.title}
-                    </Link>
-                    <div className="text-xs text-[#9ca3af] mt-0.5">
-                      /{post.slug}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        post.status === 'published'
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-[#f3efe7] text-[#78716c]'
-                      }`}
-                    >
-                      {post.status === 'published' ? '已发布' : '草稿'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[#6b7280]">
-                    {formatDate(post.updated_at)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => router.push(`/admin/edit/${post.id}`)}
-                      className="text-sm text-[#b45309] hover:text-[#92400e] mr-3"
-                    >
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => handleDelete(post.id)}
-                      className="text-sm text-red-500 hover:text-red-600"
-                    >
-                      删除
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="mt-8">
-        <Link
-          href="/"
-          className="text-sm text-[#6b7280] hover:text-[#b45309] transition-colors"
-        >
-          ← 返回博客首页
-        </Link>
-      </div>
-    </div>
-  );
+  useEffect(() => { void fetchPosts(); }, []);
+  async function fetchPosts() { setLoading(true); try { const response = await fetch('/api/posts?all=true'); const result: { success?: boolean; data?: PostItem[] } = await response.json(); if (result.success) setPosts(result.data ?? []); else setMessage('文章加载失败，请稍后重试。'); } catch { setMessage('文章加载失败，请检查网络连接。'); } finally { setLoading(false); } }
+  async function handleDelete(post: PostItem) { if (!window.confirm(`确定删除《${post.title}》吗？此操作无法撤销。`)) return; try { const response = await fetch(`/api/posts/${post.id}`, { method: 'DELETE' }); const result: { success?: boolean; error?: string } = await response.json(); if (!result.success) throw new Error(result.error || '删除失败'); setPosts((current) => current.filter((item) => item.id !== post.id)); setMessage('文章已删除。'); } catch (error) { setMessage(error instanceof Error ? error.message : '删除失败，请稍后重试。'); } }
+  const filteredPosts = useMemo(() => posts.filter((post) => (!query.trim() || `${post.title} ${post.slug}`.toLowerCase().includes(query.trim().toLowerCase())) && (status === 'all' || post.status === status)), [posts, query, status]);
+  return <div className="mx-auto max-w-5xl px-6 py-8"><div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-medium text-[#b45309]">内容管理</p><h1 className="mt-1 text-3xl font-serif font-bold text-[#2c2c2c]">我的文章</h1><p className="mt-1 text-sm text-[#6b7280]">共 {posts.length} 篇 · 只为自己写作</p></div><Button onClick={() => router.push('/admin/new')} className="bg-[#b45309] text-white hover:bg-[#92400e]">新建文章</Button></div><div className="mb-5 flex flex-col gap-3 rounded-xl border border-[#e7e2d8] bg-white/60 p-4 sm:flex-row"><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索标题或 slug" aria-label="搜索文章" /><div className="flex gap-2"><button type="button" onClick={() => setStatus('all')} className={`rounded-md px-3 py-2 text-sm ${status === 'all' ? 'bg-[#2c2c2c] text-white' : 'bg-[#f3efe7] text-[#78716c]'}`}>全部</button><button type="button" onClick={() => setStatus('published')} className={`rounded-md px-3 py-2 text-sm ${status === 'published' ? 'bg-green-700 text-white' : 'bg-green-50 text-green-700'}`}>已发布</button><button type="button" onClick={() => setStatus('draft')} className={`rounded-md px-3 py-2 text-sm ${status === 'draft' ? 'bg-[#b45309] text-white' : 'bg-[#f3efe7] text-[#78716c]'}`}>草稿</button></div></div>{message && <div className="mb-5 rounded-lg bg-[#f3efe7] px-4 py-3 text-sm text-[#57534e]">{message}</div>}{loading ? <div className="py-16 text-center text-sm text-[#78716c]">正在加载文章…</div> : filteredPosts.length === 0 ? <div className="rounded-xl border border-dashed border-[#d6d3cb] px-6 py-16 text-center text-sm text-[#78716c]">没有匹配的文章。</div> : <div className="overflow-hidden rounded-xl border border-[#e7e2d8] bg-white"><div className="divide-y divide-[#e7e2d8]">{filteredPosts.map((post) => <div key={post.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><Link href={`/admin/edit/${post.id}`} className="font-medium text-[#2c2c2c] hover:text-[#b45309]">{post.title}</Link><p className="mt-1 truncate text-xs text-[#9ca3af]">/{post.slug} · 更新于 {new Date(post.updated_at).toLocaleDateString('zh-CN')}</p></div><div className="flex items-center gap-3"><span className={`rounded-full px-2 py-1 text-xs ${post.status === 'published' ? 'bg-green-50 text-green-700' : 'bg-[#f3efe7] text-[#78716c]'}`}>{post.status === 'published' ? '已发布' : '草稿'}</span><Button variant="outline" size="sm" onClick={() => router.push(`/admin/edit/${post.id}`)}>编辑</Button><Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={() => void handleDelete(post)}>删除</Button></div></div>)}</div></div>}<Link href="/" className="mt-8 inline-block text-sm text-[#6b7280] hover:text-[#b45309]">← 返回博客首页</Link></div>;
 }
