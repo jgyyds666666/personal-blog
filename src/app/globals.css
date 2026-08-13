@@ -3,6 +3,97 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 博客文章内容样式 */
+.post-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: var(--font-serif);
+  color: #2c2c2c;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e7e2d8;
+}
+
+.post-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-family: var(--font-serif);
+  color: #2c2c2c;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.post-content p {
+  line-height: 1.8;
+  color: #3f3f46;
+  margin: 1rem 0;
+}
+
+.post-content ul,
+.post-content ol {
+  margin: 1rem 0;
+  padding-left: 1.5rem;
+  color: #3f3f46;
+}
+
+.post-content li {
+  margin: 0.5rem 0;
+  line-height: 1.75;
+}
+
+.post-content blockquote {
+  border-left: 3px solid #b45309;
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: #57534e;
+  font-style: italic;
+  background: #f3efe7;
+  padding: 1rem 1.25rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.post-content code {
+  background: #f3efe7;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  color: #b45309;
+}
+
+.post-content pre {
+  background: #2c2c2c;
+  color: #faf8f5;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.post-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+.post-content strong {
+  font-weight: 600;
+  color: #2c2c2c;
+}
+
+.post-content a {
+  color: #b45309;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.post-content a:hover {
+  color: #92400e;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
