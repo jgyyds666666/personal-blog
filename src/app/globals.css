@@ -68,10 +68,46 @@
   padding: 1.25rem;
   border-radius: 0.5rem;
   overflow-x: auto;
-  margin: 1.5rem 0;
+  margin: 0;
   font-size: 0.875rem;
   line-height: 1.6;
   font-family: var(--font-mono);
+}
+
+.post-content .code-block-wrapper {
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f3f4f6;
+}
+
+.post-content .code-block-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.post-content .code-copy-button {
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  color: #1d4f7a;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+}
+
+.post-content .code-copy-button:hover {
+  background: #e5e7eb;
+  color: #003d73;
 }
 
 .post-content pre code {

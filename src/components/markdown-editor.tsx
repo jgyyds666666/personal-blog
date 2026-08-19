@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { normalizeBlogImageUrl } from '@/lib/blog-images';
+import { MarkdownContent } from '@/components/markdown-content';
+import { renderMarkdown } from '@/lib/markdown';
 
 interface MarkdownEditorProps {
   value: string;
@@ -189,9 +190,9 @@ export function MarkdownEditor({
       {/* 编辑区 / 预览区 */}
       <div className="relative">
         {showPreview ? (
-          <div
+          <MarkdownContent
+            html={renderMarkdown(value).html}
             className="post-content min-h-[400px] overflow-auto p-5"
-            dangerouslySetInnerHTML={{ __html: renderPreview(value) }}
           />
         ) : (
           <Textarea
@@ -256,42 +257,3 @@ function ToolbarItem({
 /**
  * 渲染预览 HTML
  */
-function renderPreview(text: string): string {
-  let html = escapeHtml(text.trim());
-
-  html = html
-    .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.*)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.*)$/gm, '<h1>$1</h1>')
-    .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(
-      /!\[([^\]]*)\]\(([^)]+)\)/g,
-      (_match, alt: string, url: string) =>
-        `<img src="${normalizeBlogImageUrl(url)}" alt="${alt}" loading="lazy">`
-    )
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
-    .replace(/^- (.*)$/gm, '<li>$1</li>');
-
-  return html
-    .split(/\n\s*\n/)
-    .map((part) => {
-      const trimmed = part.trim();
-      if (!trimmed) return '';
-      if (/^<(h1|h2|h3|pre|blockquote|li|img)/.test(trimmed))
-        return trimmed;
-      return `<p>${trimmed.replace(/\n/g, ' ')}</p>`;
-    })
-    .join('\n');
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
