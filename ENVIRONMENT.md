@@ -16,6 +16,7 @@ COZE_SUPABASE_ANON_KEY=
 COZE_SUPABASE_SERVICE_ROLE_KEY=
 BLOG_ADMIN_PASSWORD=
 BLOG_AUTH_SECRET=
+BLOG_SITE_URL=https://你的域名
 ```
 
 重启开发服务器后生效。
@@ -25,6 +26,13 @@ BLOG_AUTH_SECRET=
 在部署平台的环境变量设置中配置相同的三个变量后，重新部署应用。
 
 `COZE_SUPABASE_SERVICE_ROLE_KEY` 只能用于服务端，不能使用 `NEXT_PUBLIC_` 前缀，也不能提交到仓库。
+
+## SEO 与内容分发
+
+`BLOG_SITE_URL` 用于生成 canonical、Open Graph、站点地图和 RSS 地址。部署到线上后请填写完整的 HTTPS 域名，否则会回退到本地开发地址。
+
+- 站点地图：`/sitemap.xml`
+- RSS 订阅：`/rss.xml`
 
 ## 后台登录
 

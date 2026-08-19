@@ -5,6 +5,7 @@ import { getPublishedPostNavigationItems, getPostBySlug } from '@/lib/posts-serv
 import { MarkdownContent } from '@/components/markdown-content';
 import { CopyLinkButton, PostNavigation, ReadingProgress, TableOfContents } from '@/components/reading-tools';
 import { renderMarkdown } from '@/lib/markdown';
+import { absoluteUrl, SITE_AUTHOR, SITE_NAME } from '@/lib/site';
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;
@@ -26,7 +27,26 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   try {
     const post = await getPostBySlug(slug);
     return post
-      ? { title: post.title, description: post.excerpt || '' }
+      ? {
+          title: post.title,
+          description: post.excerpt || `${post.title} - ${SITE_NAME}`,
+          alternates: { canonical: absoluteUrl(`/posts/${encodeURIComponent(post.slug)}`) },
+          openGraph: {
+            type: 'article',
+            url: absoluteUrl(`/posts/${encodeURIComponent(post.slug)}`),
+            title: post.title,
+            description: post.excerpt || `${post.title} - ${SITE_NAME}`,
+            publishedTime: post.created_at,
+            modifiedTime: post.updated_at,
+            authors: [SITE_AUTHOR],
+            tags: post.tags || [],
+          },
+          twitter: {
+            card: 'summary',
+            title: post.title,
+            description: post.excerpt || `${post.title} - ${SITE_NAME}`,
+          },
+        }
       : { title: '文章未找到' };
   } catch {
     return { title: '文章' };
@@ -49,12 +69,27 @@ export default async function PostPage({ params }: PostPageProps) {
   const previous = currentIndex >= 0 && posts[currentIndex + 1] ? posts[currentIndex + 1] : undefined;
   const next = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
   const parsed = renderMarkdown(post.content);
+  const postUrl = absoluteUrl(`/posts/${encodeURIComponent(post.slug)}`);
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || `${post.title} - ${SITE_NAME}`,
+    datePublished: post.created_at,
+    dateModified: post.updated_at,
+    author: { '@type': 'Person', name: SITE_AUTHOR },
+    publisher: { '@type': 'Organization', name: SITE_NAME },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+    url: postUrl,
+    keywords: (post.tags || []).join(', '),
+  };
 
   return (
     <>
       <ReadingProgress />
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_220px] lg:gap-12 lg:py-14">
         <article className="min-w-0">
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replaceAll('<', '\\u003c') }} />
           <Link href="/" className="mb-8 inline-flex items-center gap-1 text-sm text-[#6b7280] transition-colors hover:text-[#b45309]">
             ← 返回文章列表
           </Link>

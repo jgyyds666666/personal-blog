@@ -4,10 +4,18 @@ import { getCachedPublishedPostSummaries } from '@/lib/public-posts';
 import { SupabaseConfigurationError } from '@/storage/database/supabase-client';
 import { HomeDataError } from '@/components/home-data-error';
 import { PostBrowser } from '@/components/post-browser';
+import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: '首页',
-  description: '记录技术、读书与生活的点滴思考。',
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: absoluteUrl('/') },
+  openGraph: {
+    type: 'website',
+    url: absoluteUrl('/'),
+    title: `首页 | ${SITE_NAME}`,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export const revalidate = 300;
