@@ -62,14 +62,16 @@
 }
 
 .post-content pre {
-  background: #2c2c2c;
-  color: #faf8f5;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #003d73;
   padding: 1.25rem;
   border-radius: 0.5rem;
   overflow-x: auto;
   margin: 1.5rem 0;
   font-size: 0.875rem;
   line-height: 1.6;
+  font-family: var(--font-mono);
 }
 
 .post-content pre code {
