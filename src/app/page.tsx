@@ -1,22 +1,23 @@
 import type { Metadata } from 'next';
-import { getPublishedPosts, type PostWithUrl } from '@/lib/posts-service';
+import type { PostSummary } from '@/lib/posts-service';
+import { getCachedPublishedPostSummaries } from '@/lib/public-posts';
 import { SupabaseConfigurationError } from '@/storage/database/supabase-client';
 import { HomeDataError } from '@/components/home-data-error';
 import { PostBrowser } from '@/components/post-browser';
 
 export const metadata: Metadata = {
   title: '首页',
-  description: '记录技术、读书与生活的点滴思考',
+  description: '记录技术、读书与生活的点滴思考。',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function HomePage() {
-  let posts: PostWithUrl[] = [];
+  let posts: PostSummary[] = [];
   let errorKind: 'configuration' | 'database' | null = null;
 
   try {
-    posts = await getPublishedPosts();
+    posts = await getCachedPublishedPostSummaries();
   } catch (error) {
     errorKind = error instanceof SupabaseConfigurationError ? 'configuration' : 'database';
     console.error('首页获取文章失败:', error);

@@ -5,6 +5,13 @@ export interface PostWithUrl extends Omit<Post, 'cover_image_key'> {
   cover_image_url?: string;
 }
 
+export type PostSummary = Pick<
+  Post,
+  'id' | 'slug' | 'title' | 'excerpt' | 'tags' | 'created_at' | 'updated_at'
+>;
+
+export type PostNavigationItem = Pick<Post, 'slug' | 'title'>;
+
 export async function checkPostsDataSource(): Promise<void> {
   const client = getSupabaseClient();
   const { error } = await client
@@ -72,6 +79,36 @@ export async function getPostBySlug(slug: string): Promise<PostWithUrl | null> {
   }
 
   return data as PostWithUrl;
+}
+
+export async function getPublishedPostSummaries(): Promise<PostSummary[]> {
+  const client = getSupabaseClient();
+  const { data, error } = await client
+    .from('posts')
+    .select('id, slug, title, excerpt, tags, created_at, updated_at')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`获取文章列表失败: ${error.message}`);
+  }
+
+  return data as PostSummary[];
+}
+
+export async function getPublishedPostNavigationItems(): Promise<PostNavigationItem[]> {
+  const client = getSupabaseClient();
+  const { data, error } = await client
+    .from('posts')
+    .select('slug, title')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`获取文章导航失败: ${error.message}`);
+  }
+
+  return data as PostNavigationItem[];
 }
 
 export async function getPostBySlugAnyStatus(slug: string): Promise<PostWithUrl | null> {

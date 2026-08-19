@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { deletePost, getPostById, getPostBySlugAnyStatus, updatePost } from '@/lib/posts-service';
+import { PUBLISHED_POSTS_CACHE_TAG } from '@/lib/public-posts';
 import { validatePostInput } from '@/lib/post-validation';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -54,6 +55,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
     revalidatePath('/');
     revalidatePath(`/posts/${existing.slug}`);
     revalidatePath(`/posts/${post.slug}`);
+    revalidateTag(PUBLISHED_POSTS_CACHE_TAG, 'max');
 
     return NextResponse.json({ success: true, data: post });
   } catch (error) {
@@ -79,6 +81,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     await deletePost(id);
     revalidatePath('/');
     revalidatePath(`/posts/${existing.slug}`);
+    revalidateTag(PUBLISHED_POSTS_CACHE_TAG, 'max');
 
     return NextResponse.json({ success: true });
   } catch (error) {

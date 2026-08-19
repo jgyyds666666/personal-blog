@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
 import {
   createPost,
   getAllPosts,
   getPostBySlugAnyStatus,
-  getPublishedPosts,
+  getPublishedPostSummaries,
 } from '@/lib/posts-service';
+import { PUBLISHED_POSTS_CACHE_TAG } from '@/lib/public-posts';
 import { validatePostInput } from '@/lib/post-validation';
 
 function unauthorizedResponse() {
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: all ? await getAllPosts() : await getPublishedPosts(),
+      data: all ? await getAllPosts() : await getPublishedPostSummaries(),
     });
   } catch (error) {
     return NextResponse.json(
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     if (post.status === 'published') {
       revalidatePath('/');
       revalidatePath(`/posts/${post.slug}`);
+      revalidateTag(PUBLISHED_POSTS_CACHE_TAG, 'max');
     }
 
     return NextResponse.json({ success: true, data: post }, { status: 201 });

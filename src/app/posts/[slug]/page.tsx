@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getPublishedPosts, getPostBySlug } from '@/lib/posts-service';
+import { getPublishedPostNavigationItems, getPostBySlug } from '@/lib/posts-service';
 import { MarkdownContent } from '@/components/markdown-content';
 import { CopyLinkButton, PostNavigation, ReadingProgress, TableOfContents } from '@/components/reading-tools';
 import { renderMarkdown } from '@/lib/markdown';
@@ -14,7 +14,7 @@ export const revalidate = 60;
 
 export async function generateStaticParams() {
   try {
-    const posts = await getPublishedPosts();
+    const posts = await getPublishedPostNavigationItems();
     return posts.map((post) => ({ slug: post.slug }));
   } catch {
     return [];
@@ -44,7 +44,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
   if (!post) notFound();
 
-  const posts = await getPublishedPosts().catch(() => []);
+  const posts = await getPublishedPostNavigationItems().catch(() => []);
   const currentIndex = posts.findIndex((item) => item.slug === post.slug);
   const previous = currentIndex >= 0 && posts[currentIndex + 1] ? posts[currentIndex + 1] : undefined;
   const next = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
