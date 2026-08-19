@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { normalizeBlogImageUrl } from '@/lib/blog-images';
 
 interface MarkdownEditorProps {
   value: string;
@@ -267,7 +268,11 @@ function renderPreview(text: string): string {
     .replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">')
+    .replace(
+      /!\[([^\]]*)\]\(([^)]+)\)/g,
+      (_match, alt: string, url: string) =>
+        `<img src="${normalizeBlogImageUrl(url)}" alt="${alt}" loading="lazy">`
+    )
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
     .replace(/^- (.*)$/gm, '<li>$1</li>');
 

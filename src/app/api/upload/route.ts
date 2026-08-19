@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { S3Storage } from 'coze-coding-dev-sdk';
 import { isAdminAuthenticated } from '@/lib/admin-auth';
+import { createBlogImageUrl } from '@/lib/blog-images';
 
 const storage = new S3Storage({ region: 'cn-beijing' });
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -33,10 +34,10 @@ export async function POST(request: Request) {
       fileName,
       contentType: file.type,
     });
-    const url = await storage.generatePresignedUrl({
-      key: fileKey,
-      expireTime: 7 * 24 * 60 * 60,
-    });
+    const url = createBlogImageUrl(fileKey);
+    if (!url) {
+      throw new Error('图片存储地址无效。');
+    }
 
     return NextResponse.json({ success: true, data: { key: fileKey, url } });
   } catch (error) {
