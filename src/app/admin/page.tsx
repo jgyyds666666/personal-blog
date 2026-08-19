@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Plus, FileText, Trash2, Edit3, ArrowLeft } from 'lucide-react';
+import { redirectIfAdminSessionExpired } from '@/lib/admin-client';
 
 interface PostItem {
   id: string;
@@ -32,6 +33,7 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const response = await fetch('/api/posts?all=true');
+      if (redirectIfAdminSessionExpired(response)) return;
       const result: { success?: boolean; data?: PostItem[] } =
         await response.json();
       if (result.success) setPosts(result.data ?? []);
@@ -50,6 +52,7 @@ export default function AdminPage() {
       const response = await fetch(`/api/posts/${post.id}`, {
         method: 'DELETE',
       });
+      if (redirectIfAdminSessionExpired(response)) return;
       const result: { success?: boolean; error?: string } =
         await response.json();
       if (!result.success) throw new Error(result.error || '删除失败');

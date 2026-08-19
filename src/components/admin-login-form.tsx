@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-export function AdminLoginForm() {
+export function AdminLoginForm({ nextPath = '/admin' }: { nextPath?: string }) {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -34,7 +34,7 @@ export function AdminLoginForm() {
         throw new Error(result.error || '登录失败，请稍后重试。');
       }
 
-      router.replace('/admin');
+      router.replace(nextPath);
       router.refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '登录失败，请稍后重试。');

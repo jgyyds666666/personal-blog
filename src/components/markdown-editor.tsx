@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { MarkdownContent } from '@/components/markdown-content';
 import { renderMarkdown } from '@/lib/markdown';
+import { redirectIfAdminSessionExpired } from '@/lib/admin-client';
 
 interface MarkdownEditorProps {
   value: string;
@@ -128,6 +129,7 @@ export function MarkdownEditor({
         method: 'POST',
         body: formData,
       });
+      if (redirectIfAdminSessionExpired(response)) return;
       const result: {
         success?: boolean;
         data?: { url: string };
