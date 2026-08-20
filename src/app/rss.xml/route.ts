@@ -1,7 +1,7 @@
-import { getCachedPublishedPostSummaries } from '@/lib/public-posts';
+import { getPublishedPostSummaries } from '@/lib/posts-service';
 import { absoluteUrl, SITE_AUTHOR, SITE_DESCRIPTION, SITE_NAME } from '@/lib/site';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 function escapeXml(value: string) {
   return value
@@ -13,7 +13,7 @@ function escapeXml(value: string) {
 }
 
 export async function GET() {
-  const posts = await getCachedPublishedPostSummaries().catch(() => []);
+  const posts = await getPublishedPostSummaries().catch(() => []);
   const latestDate = posts[0]?.updated_at || posts[0]?.created_at || new Date().toISOString();
   const items = posts
     .map((post) => {

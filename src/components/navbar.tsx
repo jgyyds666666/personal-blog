@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { useRouter } from 'next/navigation';
 
 const navLinks = [
   { href: '/', label: '首页' },
@@ -13,8 +11,6 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { isLoggedIn, refresh } = useAdminAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -23,14 +19,6 @@ export function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  const handleLogout = async () => {
-    const res = await fetch('/api/auth/logout', { method: 'POST' });
-    if (res.ok) {
-      await refresh();
-      router.push('/');
-    }
-  };
 
   return (
     <header
@@ -81,15 +69,6 @@ export function Navbar() {
           >
             文章管理
           </Link>
-          {isLoggedIn && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="text-sm text-[#4b5563] transition-colors hover:text-[#b45309]"
-            >
-              退出
-            </button>
-          )}
         </nav>
       </div>
     </header>

@@ -7,8 +7,6 @@ export function Footer() {
           <a href="https://github.com/jgyyds666666" target="_blank" rel="noreferrer" className="transition-colors hover:text-[#b45309]">GitHub</a>
           <span className="text-[#e7e2d8]">·</span>
           <a href="/rss.xml" className="transition-colors hover:text-[#b45309]">RSS</a>
-          <span className="text-[#e7e2d8]">·</span>
-          <a href="mailto:hello@example.com" className="transition-colors hover:text-[#b45309]">联系我</a>
         </nav>
       </div>
     </footer>

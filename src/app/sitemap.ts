@@ -1,11 +1,11 @@
 import type { MetadataRoute } from 'next';
-import { getCachedPublishedPostSummaries } from '@/lib/public-posts';
+import { getPublishedPostSummaries } from '@/lib/posts-service';
 import { absoluteUrl } from '@/lib/site';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const posts = await getCachedPublishedPostSummaries().catch(() => []);
+  const posts = await getPublishedPostSummaries().catch(() => []);
 
   return [
     {
