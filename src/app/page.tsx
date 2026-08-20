@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
-import type { PostSummary } from '@/lib/posts-service';
-import { getCachedPublishedPostSummaries } from '@/lib/public-posts';
+import { getPublishedPostSummaries, type PostSummary } from '@/lib/posts-service';
 import { SupabaseConfigurationError } from '@/storage/database/supabase-client';
 import { HomeDataError } from '@/components/home-data-error';
 import { PostBrowser } from '@/components/post-browser';
@@ -18,14 +17,14 @@ export const metadata: Metadata = {
   },
 };
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   let posts: PostSummary[] = [];
   let errorKind: 'configuration' | 'database' | null = null;
 
   try {
-    posts = await getCachedPublishedPostSummaries();
+    posts = await getPublishedPostSummaries();
   } catch (error) {
     errorKind = error instanceof SupabaseConfigurationError ? 'configuration' : 'database';
     console.error('首页获取文章失败:', error);

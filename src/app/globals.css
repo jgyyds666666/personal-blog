@@ -44,7 +44,6 @@
 
 .post-content blockquote {
   border-left: 3px solid #b45309;
-  padding-left: 1rem;
   margin: 1.5rem 0;
   color: #57534e;
   font-style: italic;
@@ -72,6 +71,16 @@
   font-size: 0.875rem;
   line-height: 1.6;
   font-family: var(--font-mono);
+}
+
+.post-content .task-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.post-content .task-list input {
+  margin-right: 0.45rem;
+  accent-color: #b45309;
 }
 
 .post-content .code-block-wrapper {
@@ -146,6 +155,33 @@
   height: auto;
   margin: 1.5rem auto;
   border-radius: 0.75rem;
+}
+
+.post-content .table-scroll {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 32rem;
+  color: #3f3f46;
+  font-size: 0.95rem;
+}
+
+.post-content th,
+.post-content td {
+  border: 1px solid #e7e2d8;
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.post-content th {
+  background: #f3efe7;
+  color: #2c2c2c;
+  font-weight: 600;
 }
 
 @theme inline {

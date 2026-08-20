@@ -56,6 +56,10 @@ export function normalizeBlogImageUrl(value: string): string {
     return value;
   }
 
+  if (decodedPathname.startsWith(BLOG_IMAGE_ROUTE_PREFIX)) {
+    return createBlogImageUrl(decodedPathname.slice(BLOG_IMAGE_ROUTE_PREFIX.length)) ?? value;
+  }
+
   const marker = `/${BLOG_IMAGE_KEY_PREFIX}`;
   const markerIndex = decodedPathname.indexOf(marker);
   if (markerIndex < 0) {

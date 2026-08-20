@@ -70,25 +70,25 @@ export function Navbar() {
             );
           })}
 
+          <Link
+            href="/admin"
+            aria-current={pathname.startsWith('/admin') ? 'page' : undefined}
+            className={`text-sm transition-colors ${
+              pathname.startsWith('/admin')
+                ? 'font-medium text-[#b45309]'
+                : 'text-[#4b5563] hover:text-[#b45309]'
+            }`}
+          >
+            文章管理
+          </Link>
           {isLoggedIn && (
-            <>
-              <Link
-                href="/admin"
-                className={`text-sm transition-colors ${
-                  pathname.startsWith('/admin')
-                    ? 'font-medium text-[#b45309]'
-                    : 'text-[#4b5563] hover:text-[#b45309]'
-                }`}
-              >
-                管理
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-[#4b5563] transition-colors hover:text-[#b45309]"
-              >
-                退出
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm text-[#4b5563] transition-colors hover:text-[#b45309]"
+            >
+              退出
+            </button>
           )}
         </nav>
       </div>

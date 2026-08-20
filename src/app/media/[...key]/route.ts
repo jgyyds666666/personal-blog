@@ -22,13 +22,18 @@ export async function GET(_request: Request, { params }: RouteContext) {
       key: fileKey,
       expireTime: SIGNED_URL_LIFETIME_SECONDS,
     });
-    const response = NextResponse.redirect(signedUrl, 307);
+    const upstream = await fetch(signedUrl, { cache: 'no-store' });
+    if (!upstream.ok || !upstream.body) {
+      return NextResponse.json({ error: '图片暂时无法加载。' }, { status: 502 });
+    }
 
-    response.headers.set(
-      'Cache-Control',
-      'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400'
-    );
-    return response;
+    return new Response(upstream.body, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
+        'Content-Disposition': 'inline',
+        'Content-Type': upstream.headers.get('content-type') || 'application/octet-stream',
+      },
+    });
   } catch (error) {
     console.error('生成图片访问地址失败:', error);
     return NextResponse.json({ error: '图片暂时无法加载。' }, { status: 502 });

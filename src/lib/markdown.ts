@@ -51,42 +51,91 @@ function renderBlock(block: string, headings: HeadingItem[], codeBlocks: CodeBlo
   if (headingMatch) {
     const level = headingMatch[1].length;
     const title = headingMatch[2].trim();
-    if (level === 1) return `<h1>${title}</h1>`;
+    const renderedTitle = renderInlineMarkdown(title);
+    if (level === 1) return `<h1>${renderedTitle}</h1>`;
     const headingLevel = level as 2 | 3;
     const id = `heading-${headings.length}`;
-    headings.push({ id, title: stripHtml(title), level: headingLevel });
-    return `<h${headingLevel} id="${id}">${title}</h${headingLevel}>`;
+    headings.push({ id, title: stripHtml(renderedTitle), level: headingLevel });
+    return `<h${headingLevel} id="${id}">${renderedTitle}</h${headingLevel}>`;
   }
 
+  const table = renderTable(trimmed);
+  if (table) return table;
+
   if (/^(?:[-*]\s+.+\n?)+$/.test(trimmed)) {
+    const taskItems = trimmed.split('\n').map((line) => line.match(/^[-*]\s+\[([ xX])\]\s+(.*)$/));
+    if (taskItems.every(Boolean)) {
+      return `<ul class="task-list">${taskItems.map((item) => {
+        const task = item as RegExpMatchArray;
+        const checked = task[1].toLowerCase() === 'x' ? ' checked' : '';
+        return `<li><input type="checkbox" disabled${checked}> ${renderInlineMarkdown(task[2])}</li>`;
+      }).join('')}</ul>`;
+    }
     return `<ul>${trimmed
       .split('\n')
-      .map((line) => `<li>${line.replace(/^[-*]\s+/, '')}</li>`)
+      .map((line) => `<li>${renderInlineMarkdown(line.replace(/^[-*]\s+/, ''))}</li>`)
       .join('')}</ul>`;
   }
 
   if (/^(?:\d+[.)]\s+.+\n?)+$/.test(trimmed)) {
     return `<ol>${trimmed
       .split('\n')
-      .map((line) => `<li>${line.replace(/^\d+[.)]\s+/, '')}</li>`)
+      .map((line) => `<li>${renderInlineMarkdown(line.replace(/^\d+[.)]\s+/, ''))}</li>`)
       .join('')}</ol>`;
   }
 
   if (/^(?:&gt;\s?.*\n?)+$/.test(trimmed)) {
     return `<blockquote>${trimmed
       .split('\n')
-      .map((line) => line.replace(/^&gt;\s?/, ''))
+      .map((line) => renderInlineMarkdown(line.replace(/^&gt;\s?/, '')))
       .join('<br>')}</blockquote>`;
   }
 
   return `<p>${renderInlineMarkdown(trimmed.replace(/\n/g, ' '))}</p>`;
 }
 
+function renderTable(block: string): string | null {
+  const lines = block.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2 || !/^\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?$/.test(lines[1])) {
+    return null;
+  }
+
+  const header = splitTableRow(lines[0]);
+  const separator = splitTableRow(lines[1]);
+  if (!header.length || header.length !== separator.length) return null;
+
+  const alignments = separator.map((cell) => {
+    const value = cell.trim();
+    if (value.startsWith(':') && value.endsWith(':')) return 'center';
+    if (value.startsWith(':')) return 'left';
+    if (value.endsWith(':')) return 'right';
+    return undefined;
+  });
+  const renderCell = (cell: string) => renderInlineMarkdown(cell.trim());
+  const cells = (row: string[], tag: 'th' | 'td') => row.map((cell, index) => {
+    const align = alignments[index];
+    const attribute = align ? ` align="${align}"` : '';
+    return `<${tag}${attribute}>${renderCell(cell)}</${tag}>`;
+  }).join('');
+  const body = lines.slice(2).map((line) => {
+    const row = splitTableRow(line);
+    if (row.length !== header.length) return '';
+    return `<tr>${cells(row, 'td')}</tr>`;
+  }).filter(Boolean).join('');
+
+  return `<div class="table-scroll"><table><thead><tr>${cells(header, 'th')}</tr></thead>${body ? `<tbody>${body}</tbody>` : ''}</table></div>`;
+}
+
+function splitTableRow(line: string): string[] {
+  const normalized = line.replace(/^\|\s*/, '').replace(/\s*\|$/, '');
+  return normalized.split(/(?<!\\)\|/).map((cell) => cell.replace(/\\\|/g, '|'));
+}
+
 function renderInlineMarkdown(value: string): string {
   const inlineCode: string[] = [];
   let html = value.replace(/`([^`]+)`/g, (_match, code: string) => {
     const index = inlineCode.push(`<code>${code}</code>`) - 1;
-    return `\u0000INLINE_CODE_${index}\u0000`;
+    return `\u0000INLINECODE${index}\u0000`;
   });
 
   html = html
@@ -100,9 +149,10 @@ function renderInlineMarkdown(value: string): string {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/__([^_]+?)__/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/_([^_]+)_/g, '<em>$1</em>');
+    .replace(/_([^_]+)_/g, '<em>$1</em>')
+    .replace(/~~(.+?)~~/g, '<del>$1</del>');
 
-  return html.replace(/\u0000INLINE_CODE_(\d+)\u0000/g, (_match, index: string) => inlineCode[Number(index)] || '');
+  return html.replace(/\u0000INLINECODE(\d+)\u0000/g, (_match, index: string) => inlineCode[Number(index)] || '');
 }
 
 function sanitizeUrl(value: string, isImage: boolean): string {
