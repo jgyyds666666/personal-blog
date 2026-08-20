@@ -8,8 +8,9 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
   useEffect(() => {
     const root = contentRef.current;
     if (!root) return;
+    const contentRoot = root;
 
-    root.querySelectorAll<HTMLPreElement>('pre').forEach((pre) => {
+    contentRoot.querySelectorAll<HTMLPreElement>('pre').forEach((pre) => {
       if (pre.parentElement?.classList.contains('code-block-wrapper')) return;
 
       const wrapper = document.createElement('div');
@@ -32,15 +33,15 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
       const target = event.target;
       if (!(target instanceof Element)) return;
       const button = target.closest<HTMLButtonElement>('.code-copy-button');
-      if (!button || !root.contains(button)) return;
+      if (!button || !contentRoot.contains(button)) return;
       const pre = button.closest('.code-block-wrapper')?.querySelector('pre');
       if (pre) void copyCode(pre, button);
     }
 
-    root.addEventListener('click', handleClick);
+    contentRoot.addEventListener('click', handleClick);
 
     return () => {
-      root.removeEventListener('click', handleClick);
+      contentRoot.removeEventListener('click', handleClick);
     };
   }, [html]);
 
