@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, type ChangeEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   Bold,
   Braces,
@@ -14,6 +14,7 @@ import {
   Link2,
   List,
   ListOrdered,
+  Maximize2,
   PencilLine,
   Quote,
 } from 'lucide-react';
@@ -22,6 +23,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { MarkdownContent } from '@/components/markdown-content';
 import { renderMarkdown } from '@/lib/markdown';
 import { redirectIfAdminSessionExpired } from '@/lib/admin-client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface MarkdownEditorProps {
   value: string;
@@ -77,7 +85,9 @@ export function MarkdownEditor({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showFullPreview, setShowFullPreview] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const previewHtml = useMemo(() => renderMarkdown(value).html, [value]);
 
   const insertText = useCallback(
     (prefix: string, suffix = '', fallback = '') => {
@@ -187,13 +197,23 @@ export function MarkdownEditor({
           )}
           <span>{showPreview ? '编辑' : '预览'}</span>
         </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 shrink-0 gap-1.5 text-xs font-medium text-[#57534e] hover:bg-[#e7e2d8] hover:text-[#b45309]"
+          onClick={() => setShowFullPreview(true)}
+        >
+          <Maximize2 className="size-4" strokeWidth={1.8} />
+          <span className="hidden sm:inline">全屏预览</span>
+        </Button>
       </div>
 
       {/* 编辑区 / 预览区 */}
       <div className="relative">
         {showPreview ? (
           <MarkdownContent
-            html={renderMarkdown(value).html}
+            html={previewHtml}
             className="post-content min-h-[400px] overflow-auto p-5"
           />
         ) : (
@@ -225,6 +245,22 @@ export function MarkdownEditor({
         onChange={(event) => void handleImageUpload(event)}
         className="hidden"
       />
+
+      <Dialog open={showFullPreview} onOpenChange={setShowFullPreview}>
+        <DialogContent className="h-[90vh] max-w-5xl grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-5xl">
+          <DialogHeader className="border-b border-[#e7e2d8] px-6 py-4">
+            <DialogTitle className="font-serif text-xl text-[#2c2c2c]">当前文章预览</DialogTitle>
+            <DialogDescription>实时显示尚未保存的正文内容。</DialogDescription>
+          </DialogHeader>
+          <div className="min-h-0 overflow-y-auto px-6 py-6 sm:px-10">
+            {value.trim() ? (
+              <MarkdownContent html={previewHtml} />
+            ) : (
+              <p className="py-20 text-center text-sm text-[#9ca3af]">正文为空，暂时没有可预览的内容。</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

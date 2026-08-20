@@ -12,7 +12,7 @@
     "start": "bash ./scripts/start.sh",
     "test:markdown": "tsx scripts/test-markdown.ts",
     "ts-check": "tsc -p tsconfig.json",
-    "validate": "pnpm dlx concurrently --group --names lint-tsc,lint-build,lint-style \"pnpm ts-check\" \"pnpm lint:build\" \"pnpm lint:style\""
+    "validate": "pnpm ts-check && pnpm lint:build && pnpm lint:style && pnpm test:markdown"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",

@@ -223,7 +223,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/admin" className="text-sm text-[#6b7280] hover:text-[#b45309]">返回列表</Link>
           <Link href={`/admin/preview/${postId}`} target="_blank" className="text-sm text-[#b45309] underline hover:text-[#92400e]">
-            {hasChanges ? '预览已保存版本' : '预览文章'}
+            {hasChanges ? '打开已保存版本' : '打开文章预览'}
           </Link>
         </div>
       </div>
@@ -249,7 +249,7 @@ export default function EditPostPage({ params }: EditPostPageProps) {
           </div>
         </section>
         <section className="rounded-xl border border-[#e7e2d8] bg-white p-4 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center justify-between"><h2 className="font-serif text-lg font-semibold text-[#2c2c2c]">正文</h2><span className="text-xs text-[#9ca3af]">支持 Markdown</span></div>
+          <div className="mb-4 flex items-center justify-between"><h2 className="font-serif text-lg font-semibold text-[#2c2c2c]">正文</h2><span className="text-xs text-[#9ca3af]">工具栏可实时预览当前修改</span></div>
           <MarkdownEditor value={content} onChange={setContent} placeholder="开始写作，支持 Markdown 格式。" />
         </section>
       </div>

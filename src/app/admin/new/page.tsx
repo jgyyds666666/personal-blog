@@ -158,7 +158,7 @@ export default function NewPostPage() {
           </div>
         </section>
         <section className="rounded-xl border border-[#e7e2d8] bg-white p-4 shadow-sm sm:p-6">
-          <div className="mb-4 flex items-center justify-between"><h2 className="font-serif text-lg font-semibold text-[#2c2c2c]">正文</h2><span className="text-xs text-[#9ca3af]">支持 Markdown</span></div>
+          <div className="mb-4 flex items-center justify-between"><h2 className="font-serif text-lg font-semibold text-[#2c2c2c]">正文</h2><span className="text-xs text-[#9ca3af]">工具栏可实时预览当前内容</span></div>
           <MarkdownEditor value={content} onChange={setContent} placeholder="从这里开始写作…" />
         </section>
       </div>

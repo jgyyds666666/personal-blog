@@ -23,16 +23,24 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
       copyButton.className = 'code-copy-button';
       copyButton.setAttribute('aria-label', '复制代码');
       copyButton.textContent = '复制';
-      copyButton.addEventListener('click', () => void copyCode(pre, copyButton));
       toolbar.append(language, copyButton);
       pre.replaceWith(wrapper);
       wrapper.append(toolbar, pre);
     });
 
+    function handleClick(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const button = target.closest<HTMLButtonElement>('.code-copy-button');
+      if (!button || !root.contains(button)) return;
+      const pre = button.closest('.code-block-wrapper')?.querySelector('pre');
+      if (pre) void copyCode(pre, button);
+    }
+
+    root.addEventListener('click', handleClick);
+
     return () => {
-      root.querySelectorAll<HTMLButtonElement>('.code-copy-button').forEach((button) => {
-        button.replaceWith(button.cloneNode(true));
-      });
+      root.removeEventListener('click', handleClick);
     };
   }, [html]);
 
