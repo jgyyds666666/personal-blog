@@ -27,11 +27,17 @@ export async function GET(_request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: '图片暂时无法加载。' }, { status: 502 });
     }
 
+    const contentType = upstream.headers.get('content-type') || '';
+    if (!/^image\/(?:avif|gif|jpeg|png|webp)(?:;|$)/i.test(contentType)) {
+      return NextResponse.json({ error: '图片格式无效。' }, { status: 502 });
+    }
+
     return new Response(upstream.body, {
       headers: {
         'Cache-Control': 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400',
         'Content-Disposition': 'inline',
-        'Content-Type': upstream.headers.get('content-type') || 'application/octet-stream',
+        'Content-Type': contentType,
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {

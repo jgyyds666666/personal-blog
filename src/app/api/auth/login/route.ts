@@ -6,12 +6,21 @@ import {
   getSessionMaxAge,
   verifyAdminPassword,
 } from '@/lib/admin-auth';
+import { clearFailedLogins, getLoginLimit, recordFailedLogin } from '@/lib/login-rate-limit';
 
 interface LoginPayload {
   password?: unknown;
 }
 
 export async function POST(request: Request) {
+  const limit = getLoginLimit(request);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { success: false, error: '登录尝试过于频繁，请稍后再试。' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } }
+    );
+  }
+
   try {
     const payload = (await request.json()) as LoginPayload;
 
@@ -20,9 +29,11 @@ export async function POST(request: Request) {
     }
 
     if (!verifyAdminPassword(payload.password)) {
+      recordFailedLogin(request);
       return NextResponse.json({ success: false, error: '后台密码不正确。' }, { status: 401 });
     }
 
+    clearFailedLogins(request);
     const response = NextResponse.json({ success: true });
     response.cookies.set({
       name: ADMIN_SESSION_COOKIE,
