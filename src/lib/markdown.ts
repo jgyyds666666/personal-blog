@@ -27,7 +27,7 @@ type ReferenceMap = Map<string, string>;
 const CODE_BLOCK_TOKEN = '\u0000CODEBLOCK';
 const LIST_ITEM_PATTERN = /^(\s*)([-*]|\d+[.)])\s+(.+)$/;
 
-export function renderMarkdown(text: string): { html: string; headings: HeadingItem[] } {
+export function renderMarkdown(text: string, options: { includeTopLevelHeadings?: boolean } = {}): { html: string; headings: HeadingItem[] } {
   const headings: HeadingItem[] = [];
   const codeBlocks: CodeBlock[] = [];
   const references: ReferenceMap = new Map();
@@ -42,7 +42,7 @@ export function renderMarkdown(text: string): { html: string; headings: HeadingI
   const escapedSource = escapeHtml(protectedSource);
   const html = escapedSource
     .split(/\n\s*\n/)
-    .map((block) => renderBlock(block, headings, codeBlocks, references))
+    .map((block) => renderBlock(block, headings, codeBlocks, references, options.includeTopLevelHeadings))
     .filter(Boolean)
     .join('\n');
 
@@ -67,7 +67,8 @@ function renderBlock(
   block: string,
   headings: HeadingItem[],
   codeBlocks: CodeBlock[],
-  references: ReferenceMap
+  references: ReferenceMap,
+  includeTopLevelHeadings = false
 ): string {
   const trimmed = block.trim();
   if (!trimmed) return '';
@@ -83,12 +84,12 @@ function renderBlock(
 
   const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
   if (headingMatch) {
-    return renderHeading(headingMatch[1].length, headingMatch[2].trim(), headings, references);
+    return renderHeading(headingMatch[1].length, headingMatch[2].trim(), headings, references, includeTopLevelHeadings);
   }
 
   const setextHeading = trimmed.match(/^(.+)\n(={3,}|-{3,})$/);
   if (setextHeading) {
-    return renderHeading(setextHeading[2][0] === '=' ? 1 : 2, setextHeading[1].trim(), headings, references);
+    return renderHeading(setextHeading[2][0] === '=' ? 1 : 2, setextHeading[1].trim(), headings, references, includeTopLevelHeadings);
   }
 
   if (/^(?:\*\s*){3,}$|^(?:-\s*){3,}$|^(?:_\s*){3,}$/.test(trimmed)) {
@@ -111,13 +112,13 @@ function renderBlock(
   return `<p>${renderInlineMarkdown(trimmed.replace(/\n/g, ' '), references)}</p>`;
 }
 
-function renderHeading(level: number, title: string, headings: HeadingItem[], references: ReferenceMap): string {
+function renderHeading(level: number, title: string, headings: HeadingItem[], references: ReferenceMap, includeTopLevelHeadings: boolean): string {
   const renderedTitle = renderInlineMarkdown(title, references);
-  if (level === 1) return `<h1>${renderedTitle}</h1>`;
-  const headingLevel = Math.min(level, 3) as 2 | 3;
+  if (level === 1 && !includeTopLevelHeadings) return `<h1>${renderedTitle}</h1>`;
+  const headingLevel = level <= 2 ? 2 : 3;
   const id = `heading-${headings.length}`;
   headings.push({ id, title: stripHtml(renderedTitle), level: headingLevel });
-  return `<h${headingLevel} id="${id}">${renderedTitle}</h${headingLevel}>`;
+  return `<h${level === 1 ? 1 : headingLevel} id="${id}">${renderedTitle}</h${level === 1 ? 1 : headingLevel}>`;
 }
 
 function renderListBlock(block: string, references: ReferenceMap): string | null {
@@ -223,6 +224,9 @@ function renderInlineMarkdown(value: string, references: ReferenceMap): string {
   const protectedHtml: string[] = [];
   const protect = (html: string) => `\u0000INLINE${protectedHtml.push(html) - 1}\u0000`;
   let html = value.replace(/`([^`]+)`/g, (_match, code: string) => protect(`<code>${code}</code>`));
+
+  // Turndown escapes punctuation in Word text; keep it literal when rendering.
+  html = html.replace(/\\([\\`*{}\[\]()#+\-.!_|])/g, (_match, character: string) => protect(character));
 
   html = html
     .replace(/!\[([^\]]*)\]\[([^\]]*)\]/g, (match, alt: string, identifier: string) => {

@@ -1,0 +1,123 @@
+import { test, expect } from '@playwright/test';
+import { makeWord } from '../fixtures/docx';
+
+test('upload stays on home; private content, download and images require login', async ({ page, playwright, browser }) => {
+  const guest = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:5137' });
+  const consoleErrors: string[] = [];
+  page.on('pageerror', (error) => consoleErrors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: '上传文档', exact: true })).toHaveCount(0);
+  expect((await guest.get('/api/documents')).status()).toBe(401);
+  expect((await guest.post('/api/documents')).status()).toBe(401);
+
+  await page.getByRole('link', { name: '登录查看私人文档' }).click();
+  await page.getByLabel('后台密码', { exact: true }).fill('document-test-password');
+  await page.getByRole('button', { name: '登录并返回首页' }).click();
+  await expect(page).toHaveURL('http://127.0.0.1:5137/');
+  await page.getByRole('tab', { name: '公开文章', exact: true }).click();
+  await page.getByRole('textbox', { name: '搜索文章或私人文档', exact: true }).fill('没有匹配的内容');
+  await page.getByRole('button', { name: '上传文档', exact: true }).click();
+  await page.getByLabel('选择上传文档').setInputFiles({ name: '我的私人笔记.md', mimeType: 'text/markdown', buffer: Buffer.from('# 私人章节\n\n只有作者可读的正文 **重点**') });
+  await page.getByRole('button', { name: '上传并保存', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('上传成功');
+  await expect(page).toHaveURL('http://127.0.0.1:5137/');
+  const card = page.locator('article').filter({ has: page.getByRole('heading', { name: '我的私人笔记', exact: true }) });
+  await expect(card).toBeVisible();
+  await expect(card).toContainText('私有');
+  const href = await card.locator('a[href^="/documents/"]').getAttribute('href');
+  expect(href).toMatch(/^\/documents\/[\da-f-]{36}$/);
+  const id = href!.split('/').pop()!;
+  const publicHome = await guest.get('/');
+  expect(await publicHome.text()).not.toContain('我的私人笔记');
+  expect(publicHome.headers()['cache-control']).toContain('no-store');
+  for (const path of [`/api/documents/${id}/download`, `/api/documents/${id}/assets/fake-image`]) {
+    const response = await guest.get(path);
+    expect(response.status()).toBe(401);
+    expect(response.headers()['cache-control']).toContain('no-store');
+  }
+  expect((await guest.patch(`/api/documents/${id}`, { data: { title: '不允许改名' } })).status()).toBe(401);
+  expect((await guest.delete(`/api/documents/${id}`)).status()).toBe(401);
+  const privatePage = await guest.get(href!, { maxRedirects: 0 });
+  expect([200, 307]).toContain(privatePage.status());
+  expect(await privatePage.text()).not.toContain('只有作者可读的正文');
+  expect(privatePage.headers()['x-robots-tag']).toContain('noindex');
+  const guestBrowser = await browser.newContext();
+  const guestPage = await guestBrowser.newPage();
+  await guestPage.goto(href!);
+  await expect(guestPage).toHaveURL(/\/login\?next=/);
+  await expect(guestPage.getByRole('heading', { name: '我的私人笔记', exact: true })).toHaveCount(0);
+  await guestBrowser.close();
+  for (const path of ['/api/posts', '/rss.xml', '/sitemap.xml']) expect(await (await guest.get(path)).text()).not.toContain('我的私人笔记');
+
+  await card.locator('a[href^="/documents/"]').click();
+  await expect(page.getByRole('heading', { name: '我的私人笔记', exact: true })).toBeVisible();
+  await expect(page.locator('.post-content strong')).toHaveText('重点');
+  await expect(page.getByRole('link', { name: '私人章节' })).toBeVisible();
+  const downloaded = await page.request.get(`/api/documents/${id}/download`);
+  expect(downloaded.status()).toBe(200);
+  expect(await downloaded.text()).toContain('只有作者可读的正文');
+
+  await page.getByRole('link', { name: '返回首页', exact: false }).click();
+  await card.getByRole('button', { name: '改名' }).click();
+  await page.getByRole('textbox', { name: '文档名称', exact: true }).fill('改名后的私人笔记');
+  await page.getByRole('button', { name: '保存名称' }).click();
+  await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: '公开文章', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toHaveCount(0);
+  await page.getByRole('tab', { name: '私人文档', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toBeVisible();
+
+  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, storageState: await page.context().storageState() });
+  const mobilePage = await mobile.newPage();
+  await mobilePage.goto('/');
+  expect(await mobilePage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await mobilePage.screenshot({ path: 'test-results/documents-mobile.png', fullPage: true });
+  await mobile.close();
+
+  await page.getByRole('button', { name: '退出登录', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toHaveCount(0);
+  expect((await page.request.get(`/api/documents/${id}/download`)).status()).toBe(401);
+  expect(consoleErrors).toEqual([]);
+  await guest.dispose();
+});
+
+test('Word pictures are private; text stays literal; deletion revokes file access', async ({ page, playwright }) => {
+  await page.goto('/login?next=/');
+  await page.getByLabel('后台密码', { exact: true }).fill('document-test-password');
+  await page.getByRole('button', { name: '登录并返回首页' }).click();
+  await expect(page).toHaveURL('http://127.0.0.1:5137/');
+  const word = await page.request.post('/api/documents', { multipart: { file: { name: 'Word 测试.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: await makeWord() } } });
+  expect(word.status()).toBe(201);
+  const result = await word.json() as { data: { id: string } };
+  const id = result.data.id;
+  await page.goto(`/documents/${id}`);
+  await expect(page.locator('.post-content table')).toContainText('苹果');
+  const image = page.locator('.post-content img');
+  await expect(image).toBeVisible();
+  expect(await image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  const imageUrl = await image.getAttribute('src');
+  expect(imageUrl).toContain(`/api/documents/${id}/assets/`);
+  expect((await page.request.get(imageUrl!)).status()).toBe(200);
+  const guest = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:5137' });
+  expect((await guest.get(imageUrl!)).status()).toBe(401);
+  await page.screenshot({ path: 'test-results/documents-word-reading.png', fullPage: true });
+  await page.getByRole('link', { name: '返回首页', exact: false }).click();
+  const card = page.locator('article').filter({ has: page.getByRole('heading', { name: 'Word 测试', exact: true }) });
+  await card.getByRole('button', { name: '删除', exact: true }).click();
+  await page.getByRole('button', { name: '确认删除', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Word 测试', exact: true })).toHaveCount(0);
+  expect((await page.request.get(imageUrl!)).status()).toBe(404);
+  expect((await page.request.get(`/api/documents/${id}/download`)).status()).toBe(404);
+  const plainText = '# 纯文本标题\n\n**不会变成粗体**\n<script>原样文字</script>';
+  const text = await page.request.post('/api/documents', { multipart: { file: { name: '纯文本记录.txt', mimeType: 'text/plain', buffer: Buffer.from(plainText) } } });
+  expect(text.status()).toBe(201);
+  const textResult = await text.json() as { data: { id: string } };
+  await page.goto(`/documents/${textResult.data.id}`);
+  await expect(page.locator('.post-content')).toHaveText(plainText);
+  await expect(page.locator('.post-content strong, .post-content script')).toHaveCount(0);
+  const badWord = await page.request.post('/api/documents', { multipart: { file: { name: '损坏.docx', mimeType: 'application/zip', buffer: Buffer.from('invalid') } } });
+  expect(badWord.status()).toBe(400);
+  await guest.dispose();
+});

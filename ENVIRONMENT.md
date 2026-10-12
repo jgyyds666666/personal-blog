@@ -48,3 +48,15 @@ BLOG_AUTH_SECRET=设置一个长随机字符串
 ## 图片地址
 
 编辑器上传的图片会保存为站内 `/media/...` 地址。访问该地址时，服务端会为对象生成新的临时签名，因此文章不会因为编辑时生成的签名过期而丢图。历史文章中的 `blog-images/` 签名地址也会在渲染时自动转换。
+
+## 私人文档初始化
+
+私人文档支持 `.md`、`.txt` 和 `.docx`，单个文件最多 10MB。登录后可在首页上传，上传完成留在首页，点击列表中的文档进入阅读页面。
+
+首次使用前，在 Supabase SQL Editor 执行 `scripts/migrations/001-private-documents.sql`。脚本会创建独立的文档表和私有存储桶，并禁止匿名和普通 Supabase 用户访问。该功能必须配置 `COZE_SUPABASE_SERVICE_ROLE_KEY`，缺失时会拒绝存储文档，不会降级使用匿名密钥。
+
+正文、原文件和 Word 内嵌图片只通过需要后台登录的站内地址读取，不提供公开文件地址。公开文章查询、RSS 和站点地图继续只读取 `posts` 表。
+
+Word 的字体、页眉页脚、分页和复杂布局会简化；普通标题、列表、链接、表格和受支持的内嵌图片会转换到博客样式。UTF-8、带 BOM 的 UTF-16 和常见 GB18030 中文文本可导入；Markdown 中引用的本地图片需要另行提供，单独上传 Markdown 文件不会同时上传其目录。
+
+验证命令：`pnpm validate`。浏览器测试使用独立的本地模拟数据库和存储，不连接真实 Supabase：先运行 `pnpm exec playwright install chromium`，再运行 `pnpm test:documents:e2e`。Windows 已安装 Edge 时，可设置 `$env:DOCUMENT_TEST_BROWSER='msedge'` 后直接运行浏览器测试。

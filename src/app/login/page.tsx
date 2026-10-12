@@ -6,7 +6,7 @@ import { isAdminAuthenticated } from '@/lib/admin-auth';
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
   const requestedNext = (await searchParams).next;
-  const nextPath = typeof requestedNext === 'string' && requestedNext.startsWith('/admin') && !requestedNext.startsWith('//')
+  const nextPath = typeof requestedNext === 'string' && (requestedNext === '/' || /^\/admin(?:\/[^\\]*)?$/.test(requestedNext) || /^\/documents\/[\da-f-]{36}$/i.test(requestedNext))
     ? requestedNext
     : '/admin';
   if (await isAdminAuthenticated()) {
@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <LockKeyhole className="size-5" />
           </div>
           <h1 className="font-serif text-2xl font-bold text-[#2c2c2c]">内容管理登录</h1>
-          <p className="mt-2 text-sm text-[#78716c]">仅供博客作者管理文章</p>
+          <p className="mt-2 text-sm text-[#78716c]">登录后可管理文章、上传和阅读私人文档</p>
         </div>
         <AdminLoginForm nextPath={nextPath} />
         <Link href="/" className="mt-6 block text-center text-sm text-[#78716c] hover:text-[#b45309]">

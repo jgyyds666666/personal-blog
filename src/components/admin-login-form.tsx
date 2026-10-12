@@ -63,7 +63,7 @@ export function AdminLoginForm({ nextPath = '/admin' }: { nextPath?: string }) {
         </p>
       )}
       <Button type="submit" className="h-11 w-full bg-[#b45309] text-white hover:bg-[#92400e]" disabled={submitting}>
-        {submitting ? '正在验证…' : '进入后台'}
+        {submitting ? '正在验证…' : nextPath === '/' ? '登录并返回首页' : nextPath.startsWith('/documents/') ? '登录后阅读文档' : '进入后台'}
       </Button>
     </form>
   );

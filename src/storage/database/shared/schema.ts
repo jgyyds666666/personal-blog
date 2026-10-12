@@ -1,5 +1,6 @@
-import { pgTable, serial, timestamp, varchar, text, index } from "drizzle-orm/pg-core"
+import { pgTable, serial, timestamp, varchar, text, index, uuid, jsonb } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
+import type { DocumentAsset } from '@/lib/document-types';
 
 
 
@@ -27,3 +28,16 @@ export const posts = pgTable("posts", {
 
 export type Post = typeof posts.$inferSelect;
 export type InsertPost = typeof posts.$inferInsert;
+
+export const privateDocuments = pgTable('private_documents', {
+  id: uuid('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  excerpt: varchar('excerpt', { length: 500 }).notNull().default(''),
+  format: varchar('format', { length: 4 }).notNull(),
+  original_name: text('original_name').notNull(),
+  original_key: text('original_key').notNull(),
+  content: text('content').notNull(),
+  assets: jsonb('assets').$type<DocumentAsset[]>().notNull().default(sql`'[]'::jsonb`),
+  created_at: timestamp('created_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [index('private_documents_created_at_idx').on(table.created_at)]);
