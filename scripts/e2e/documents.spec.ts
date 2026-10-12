@@ -7,6 +7,9 @@ test('upload stays on home; private content, download and images require login',
   page.on('pageerror', (error) => consoleErrors.push(error.message));
   await page.goto('/');
   await expect(page.getByRole('button', { name: '上传文档', exact: true })).toHaveCount(0);
+  const health = await guest.get('/api/health');
+  expect(health.status()).toBe(200);
+  expect(await health.json()).toEqual({ ok: true, status: 'ready' });
   expect((await guest.get('/api/documents')).status()).toBe(401);
   expect((await guest.post('/api/documents')).status()).toBe(401);
 
@@ -76,7 +79,12 @@ test('upload stays on home; private content, download and images require login',
   await mobilePage.screenshot({ path: 'test-results/documents-mobile.png', fullPage: true });
   await mobile.close();
 
+  await page.route('**/api/auth/logout', (route) => route.fulfill({ status: 503, body: 'Unavailable' }), { times: 1 });
   await page.getByRole('button', { name: '退出登录', exact: true }).click();
+  await expect(page.getByText('退出失败，请重试。', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '退出登录', exact: true }).click();
+  await expect(page.getByRole('link', { name: '登录查看私人文档' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '改名后的私人笔记', exact: true })).toHaveCount(0);
   expect((await page.request.get(`/api/documents/${id}/download`)).status()).toBe(401);
   expect(consoleErrors).toEqual([]);

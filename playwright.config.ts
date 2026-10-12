@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+const production = process.env.DOCUMENT_TEST_PRODUCTION === '1';
+
 export default defineConfig({
   testDir: './scripts/e2e',
   testMatch: '**/*.spec.ts',
@@ -16,7 +18,7 @@ export default defineConfig({
   webServer: [
     { command: 'pnpm exec tsx scripts/e2e/mock-documents-server.ts', url: 'http://127.0.0.1:54329/health', reuseExistingServer: false },
     {
-      command: 'pnpm exec next dev --webpack --hostname 127.0.0.1 --port 5137',
+      command: `pnpm exec next ${production ? 'start' : 'dev'} --hostname 127.0.0.1 --port 5137`,
       url: 'http://127.0.0.1:5137/login', reuseExistingServer: false, timeout: 120_000,
       env: {
         COZE_SUPABASE_URL: 'http://127.0.0.1:54329',

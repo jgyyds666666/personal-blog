@@ -5,7 +5,8 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname, '../../'),
   /* config options here */
   allowedDevOrigins: ['*.dev.coze.site'],
-  serverExternalPackages: ['coze-coding-dev-sdk'],
+  // Bundle the SDK and its PostgreSQL dependency into server chunks for Coze FaaS.
+  transpilePackages: ['coze-coding-dev-sdk', 'pg'],
   async headers() {
     return [
       { source: '/', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },

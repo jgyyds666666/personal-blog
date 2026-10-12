@@ -60,3 +60,5 @@ BLOG_AUTH_SECRET=设置一个长随机字符串
 Word 的字体、页眉页脚、分页和复杂布局会简化；普通标题、列表、链接、表格和受支持的内嵌图片会转换到博客样式。UTF-8、带 BOM 的 UTF-16 和常见 GB18030 中文文本可导入；Markdown 中引用的本地图片需要另行提供，单独上传 Markdown 文件不会同时上传其目录。
 
 验证命令：`pnpm validate`。浏览器测试使用独立的本地模拟数据库和存储，不连接真实 Supabase：先运行 `pnpm exec playwright install chromium`，再运行 `pnpm test:documents:e2e`。Windows 已安装 Edge 时，可设置 `$env:DOCUMENT_TEST_BROWSER='msedge'` 后直接运行浏览器测试。
+
+部署使用 Next.js 默认的 Turbopack 构建。Coze SDK 和 `pg` 随服务端代码打包，不能将 SDK 配置为外置包，否则扣子 FaaS 可能无法加载其外置模块。生产验证先执行 `pnpm exec next build`，再设置 `DOCUMENT_TEST_PRODUCTION=1` 运行 `pnpm test:documents:e2e`，测试会启动构建后的生产服务。
