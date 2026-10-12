@@ -11,16 +11,8 @@ interface PostPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  try {
-    const posts = await getPublishedPostNavigationItems();
-    return posts.map((post) => ({ slug: post.slug }));
-  } catch {
-    return [];
-  }
-}
+// Coze FaaS cannot persist regenerated article pages in the build directory.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { slug } = await params;

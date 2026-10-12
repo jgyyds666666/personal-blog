@@ -55,6 +55,8 @@ BLOG_AUTH_SECRET=设置一个长随机字符串
 
 首次使用前，在 Supabase SQL Editor 执行 `scripts/migrations/001-private-documents.sql`。脚本会创建独立的文档表和私有存储桶，并禁止匿名和普通 Supabase 用户访问。该功能必须配置 `COZE_SUPABASE_SERVICE_ROLE_KEY`，缺失时会拒绝存储文档，不会降级使用匿名密钥。
 
+如果上传日志出现 `PGRST204 Could not find the 'assets' column of 'private_documents' in the schema cache`，在同一数据库执行 `scripts/migrations/002-private-documents-assets.sql`。该脚本补齐 Word 图片索引所需的 `assets` 列，并通知 PostgREST 刷新数据库结构缓存；可重复执行，不会重建表或删除文档。完成后返回首页重试上传。
+
 正文、原文件和 Word 内嵌图片只通过需要后台登录的站内地址读取，不提供公开文件地址。公开文章查询、RSS 和站点地图继续只读取 `posts` 表。
 
 Word 的字体、页眉页脚、分页和复杂布局会简化；普通标题、列表、链接、表格和受支持的内嵌图片会转换到博客样式。UTF-8、带 BOM 的 UTF-16 和常见 GB18030 中文文本可导入；Markdown 中引用的本地图片需要另行提供，单独上传 Markdown 文件不会同时上传其目录。
@@ -62,3 +64,5 @@ Word 的字体、页眉页脚、分页和复杂布局会简化；普通标题、
 验证命令：`pnpm validate`。浏览器测试使用独立的本地模拟数据库和存储，不连接真实 Supabase：先运行 `pnpm exec playwright install chromium`，再运行 `pnpm test:documents:e2e`。Windows 已安装 Edge 时，可设置 `$env:DOCUMENT_TEST_BROWSER='msedge'` 后直接运行浏览器测试。
 
 部署使用 Next.js 默认的 Turbopack 构建。Coze SDK 和 `pg` 随服务端代码打包，不能将 SDK 配置为外置包，否则扣子 FaaS 可能无法加载其外置模块。生产验证先执行 `pnpm exec next build`，再设置 `DOCUMENT_TEST_PRODUCTION=1` 运行 `pnpm test:documents:e2e`，测试会启动构建后的生产服务。
+
+公开文章详情页采用动态渲染，每次请求读取已发布文章。扣子 FaaS 的部署目录无法保证写入 ISR 缓存，因此文章页不使用定时重建和构建时预渲染，避免 `Failed to update prerender cache` 与 `.segments` 目录写入错误。

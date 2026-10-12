@@ -1,8 +1,6 @@
-import path from 'path';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // outputFileTracingRoot: path.resolve(__dirname, './'),
   /* config options here */
   allowedDevOrigins: ['*.dev.coze.site'],
   // Bundle the SDK and its PostgreSQL dependency into server chunks for Coze FaaS.

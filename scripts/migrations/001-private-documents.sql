@@ -14,6 +14,10 @@ create table if not exists public.private_documents (
   updated_at timestamptz not null default now()
 );
 
+-- CREATE TABLE IF NOT EXISTS does not repair columns on an existing table.
+alter table public.private_documents
+  add column if not exists assets jsonb not null default '[]'::jsonb;
+
 create index if not exists private_documents_created_at_idx
   on public.private_documents (created_at desc);
 
@@ -34,4 +38,5 @@ create policy private_documents_server_only on storage.objects
   using (bucket_id <> 'private-documents')
   with check (bucket_id <> 'private-documents');
 
+notify pgrst, 'reload schema';
 commit;

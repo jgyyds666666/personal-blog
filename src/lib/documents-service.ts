@@ -17,6 +17,10 @@ export function getDocumentClient() {
 }
 
 function databaseError(code: string, message: string): Error {
+  if (code === 'PGRST204' || code === '42703') {
+    console.error('私人文档数据库结构未更新:', code, message);
+    return new DocumentConfigurationError('私人文档数据库结构尚未更新，请完成数据库迁移并刷新结构缓存后重试。');
+  }
   if (code === '42P01' || code === 'PGRST205' || code === '42501') {
     return new DocumentConfigurationError();
   }

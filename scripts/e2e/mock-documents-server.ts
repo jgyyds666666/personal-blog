@@ -1,9 +1,23 @@
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { PrivateDocument } from '../../src/lib/document-types';
+import type { Post } from '../../src/storage/database/shared/schema';
 
 const documents = new Map<string, PrivateDocument>();
 const files = new Map<string, { buffer: Buffer; contentType: string }>();
+let assetsColumnExists = true;
+let publishedPost: Post = {
+  id: '7b6c3035-50b1-4ed3-8a39-f8be72f018d2',
+  slug: 'public-reading-test',
+  title: '公开文章测试',
+  excerpt: '验证文章动态读取',
+  content: '# 原始正文\n\n公开文章内容。',
+  tags: ['验证'],
+  status: 'published',
+  cover_image_key: null,
+  created_at: '2026-10-01T00:00:00Z',
+  updated_at: '2026-10-01T00:00:00Z',
+};
 
 async function readBody(request: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = [];
@@ -20,12 +34,31 @@ async function handle(request: IncomingMessage, response: ServerResponse) {
   const url = new URL(request.url || '/', 'http://127.0.0.1:54329');
   const path = decodeURIComponent(url.pathname);
   if (path === '/health') return json(response, { ok: true });
+  if (path === '/__test/state') return json(response, { fileCount: files.size, documentCount: documents.size });
+  if (path === '/__test/schema' && request.method === 'POST') {
+    const body = JSON.parse((await readBody(request)).toString()) as { assets: boolean };
+    assetsColumnExists = body.assets;
+    return json(response, { assets: assetsColumnExists });
+  }
+  if (path === '/__test/post' && request.method === 'PATCH') {
+    const body = JSON.parse((await readBody(request)).toString()) as { content: string };
+    publishedPost = { ...publishedPost, content: body.content };
+    return json(response, publishedPost);
+  }
   if (path.startsWith('/rest/v1/')) {
-    if (path.endsWith('/posts')) return json(response, []);
+    if (path.endsWith('/posts')) {
+      const slug = url.searchParams.get('slug')?.replace(/^eq\./, '');
+      if (request.headers.accept === 'application/vnd.pgrst.object+json') {
+        if (slug && slug !== publishedPost.slug) return json(response, { code: 'PGRST116', message: 'Not found' }, 406);
+        return json(response, publishedPost);
+      }
+      return json(response, !slug || slug === publishedPost.slug ? [publishedPost] : []);
+    }
     if (!path.endsWith('/private_documents')) return json(response, {}, 404);
     if (request.headers.apikey !== 'test-service-role-key') return json(response, { message: 'Forbidden' }, 403);
     const id = url.searchParams.get('id')?.replace(/^eq\./, '');
     if (request.method === 'POST') {
+      if (!assetsColumnExists) return json(response, { code: 'PGRST204', message: "Could not find the 'assets' column of 'private_documents' in the schema cache" }, 400);
       const body = JSON.parse((await readBody(request)).toString()) as Omit<PrivateDocument, 'created_at' | 'updated_at'>;
       const now = new Date().toISOString();
       const document: PrivateDocument = { ...body, created_at: now, updated_at: now };
