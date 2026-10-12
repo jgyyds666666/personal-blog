@@ -31,7 +31,23 @@ export function CopyLinkButton() {
 
 export function TableOfContents({ headings }: { headings: HeadingItem[] }) {
   if (headings.length === 0) return null;
-  return <aside className="lg:sticky lg:top-24 lg:self-start"><details className="group rounded-xl border border-[#e7e2d8] bg-white/60 p-4 lg:block" open><summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-[#4b5563] lg:cursor-default"><List className="size-4 text-[#b45309]" />文章目录<span className="ml-auto text-xs text-[#9ca3af] lg:hidden">展开</span></summary><nav className="mt-3 space-y-1.5 border-l border-[#e7e2d8] pl-3">{headings.map((heading) => <Link key={heading.id} href={`#${heading.id}`} className={`block text-sm leading-relaxed text-[#78716c] transition-colors hover:text-[#b45309] ${heading.level === 3 ? 'pl-3 text-xs' : ''}`}>{heading.title}</Link>)}</nav></details></aside>;
+  return (
+    <aside className="lg:sticky lg:top-24 lg:self-start">
+      <details className="group rounded-xl border border-[#e7e2d8] bg-white/60 p-4 lg:block" open>
+        <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-medium text-[#4b5563] lg:cursor-default">
+          <List className="size-4 text-[#b45309]" />文章目录
+          <span className="ml-auto text-xs text-[#9ca3af] lg:hidden">展开</span>
+        </summary>
+        <nav aria-label="文章目录" className="mt-3 max-h-[60dvh] space-y-1.5 overflow-y-auto overscroll-y-contain border-l border-[#e7e2d8] pl-3 pr-2 lg:max-h-[calc(100dvh-12rem)]">
+          {headings.map((heading) => (
+            <Link key={heading.id} href={`#${heading.id}`} className={`block text-sm leading-relaxed text-[#78716c] transition-colors hover:text-[#b45309] ${heading.level === 3 ? 'pl-3 text-xs' : ''}`}>
+              {heading.title}
+            </Link>
+          ))}
+        </nav>
+      </details>
+    </aside>
+  );
 }
 
 export function PostNavigation({ previous, next }: { previous?: { slug: string; title: string }; next?: { slug: string; title: string } }) {
