@@ -13,7 +13,7 @@ export function DocumentCard({ document }: { document: PrivateDocumentSummary })
           <Badge variant="outline" className="gap-1 border-[#e7e2d8] text-[#78716c]"><LockKeyhole className="size-3" />私有</Badge>
           <span className="text-xs uppercase text-[#9ca3af]">{document.format}</span>
         </div>
-        <h2 className="font-serif text-xl font-semibold leading-snug text-[#2c2c2c] group-hover:text-[#b45309]">{document.title}</h2>
+        <h2 className="break-words font-serif text-xl font-semibold leading-snug text-[#2c2c2c] group-hover:text-[#b45309]">{document.title}</h2>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[#4b5563]">{document.excerpt || '点击阅读文档'}</p>
       </Link>
       <DocumentActions id={document.id} title={document.title} />

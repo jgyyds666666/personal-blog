@@ -92,7 +92,7 @@ export default async function PostPage({ params }: PostPageProps) {
               <span>{calculateReadingTime(post.content)} 分钟阅读</span>
               <CopyLinkButton />
             </div>
-            <h1 className="mb-4 text-3xl font-serif font-bold leading-tight text-[#2c2c2c] md:text-4xl">{post.title}</h1>
+            <h1 className="mb-4 break-words text-3xl font-serif font-bold leading-tight text-[#2c2c2c] md:text-4xl">{post.title}</h1>
             {post.excerpt && <p className="mb-5 text-base leading-relaxed text-[#6b7280]">{post.excerpt}</p>}
             <div className="flex flex-wrap gap-2">
               {(post.tags || []).map((tag) => (
@@ -100,6 +100,7 @@ export default async function PostPage({ params }: PostPageProps) {
               ))}
             </div>
           </header>
+          <TableOfContents headings={parsed.headings} variant="mobile" />
           <MarkdownContent html={parsed.html} />
           <PostNavigation
             previous={previous ? { slug: previous.slug, title: previous.title } : undefined}

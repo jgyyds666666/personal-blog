@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { copyText } from '@/lib/clipboard';
 
 export function MarkdownContent({ html, className = 'post-content' }: { html: string; className?: string }) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -9,6 +10,42 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
     const root = contentRef.current;
     if (!root) return;
     const contentRoot = root;
+    const tableCleanups: Array<() => void> = [];
+    const copyTimers = new Set<number>();
+    let disposed = false;
+
+    contentRoot.querySelectorAll<HTMLDivElement>('.table-scroll').forEach((scroller) => {
+      const table = scroller.querySelector('table');
+      if (!table) return;
+      let block = scroller.parentElement;
+      if (!block?.classList.contains('table-block')) {
+        block = document.createElement('div');
+        block.className = 'table-block';
+        const hint = document.createElement('p');
+        hint.className = 'table-scroll-hint';
+        hint.textContent = '左右滑动查看完整表格';
+        scroller.replaceWith(block);
+        block.append(hint, scroller);
+      }
+      const tableBlock = block;
+      const hint = tableBlock.querySelector<HTMLParagraphElement>('.table-scroll-hint');
+      const update = () => {
+        const overflow = scroller.scrollWidth > scroller.clientWidth + 1;
+        tableBlock.dataset.overflow = String(overflow);
+        tableBlock.dataset.scrolled = String(scroller.scrollLeft > 1);
+        tableBlock.dataset.end = String(scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 1);
+        if (hint) hint.hidden = !overflow;
+        scroller.tabIndex = overflow ? 0 : -1;
+        scroller.setAttribute('role', 'region');
+        scroller.setAttribute('aria-label', overflow ? '文章表格，可左右滑动' : '文章表格');
+      };
+      update();
+      const observer = new ResizeObserver(update);
+      observer.observe(scroller);
+      observer.observe(table);
+      scroller.addEventListener('scroll', update, { passive: true });
+      tableCleanups.push(() => { observer.disconnect(); scroller.removeEventListener('scroll', update); });
+    });
 
     contentRoot.querySelectorAll<HTMLPreElement>('pre').forEach((pre) => {
       if (pre.parentElement?.classList.contains('code-block-wrapper')) return;
@@ -23,6 +60,7 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
       copyButton.type = 'button';
       copyButton.className = 'code-copy-button';
       copyButton.setAttribute('aria-label', '复制代码');
+      copyButton.setAttribute('aria-live', 'polite');
       copyButton.textContent = '复制';
       toolbar.append(language, copyButton);
       pre.replaceWith(wrapper);
@@ -35,33 +73,27 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
       const button = target.closest<HTMLButtonElement>('.code-copy-button');
       if (!button || !contentRoot.contains(button)) return;
       const pre = button.closest('.code-block-wrapper')?.querySelector('pre');
-      if (pre) void copyCode(pre, button);
+      if (pre) {
+        void copyText(pre.querySelector('code')?.textContent || '').then(
+          () => { button.textContent = '已复制'; },
+          () => { button.textContent = '复制失败'; },
+        ).then(() => {
+          if (disposed) return;
+          const timer = window.setTimeout(() => { button.textContent = '复制'; copyTimers.delete(timer); }, 1800);
+          copyTimers.add(timer);
+        });
+      }
     }
 
     contentRoot.addEventListener('click', handleClick);
 
     return () => {
+      disposed = true;
       contentRoot.removeEventListener('click', handleClick);
+      tableCleanups.forEach((cleanup) => cleanup());
+      copyTimers.forEach((timer) => window.clearTimeout(timer));
     };
   }, [html]);
 
-  return <div ref={contentRef} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
-}
-
-async function copyCode(pre: HTMLPreElement, button: HTMLButtonElement) {
-  const code = pre.querySelector('code')?.textContent || '';
-  try {
-    await navigator.clipboard.writeText(code);
-  } catch {
-    const fallback = document.createElement('textarea');
-    fallback.value = code;
-    fallback.style.position = 'fixed';
-    fallback.style.opacity = '0';
-    document.body.appendChild(fallback);
-    fallback.select();
-    document.execCommand('copy');
-    fallback.remove();
-  }
-  button.textContent = '已复制';
-  window.setTimeout(() => { button.textContent = '复制'; }, 1600);
+  return <div ref={contentRef} data-reading-content className={className} dangerouslySetInnerHTML={{ __html: html }} />;
 }

@@ -114,7 +114,11 @@ test('Word pictures are private; text stays literal; deletion revokes file acces
   await page.getByRole('link', { name: '返回首页', exact: false }).click();
   const card = page.locator('article').filter({ has: page.getByRole('heading', { name: 'Word 测试', exact: true }) });
   await card.getByRole('button', { name: '删除', exact: true }).click();
-  await page.getByRole('button', { name: '确认删除', exact: true }).click();
+  const [deleted] = await Promise.all([
+    page.waitForResponse((response) => response.request().method() === 'DELETE' && new URL(response.url()).pathname === `/api/documents/${id}`),
+    page.getByRole('button', { name: '确认删除', exact: true }).click(),
+  ]);
+  expect(deleted.status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'Word 测试', exact: true })).toHaveCount(0);
   expect((await page.request.get(imageUrl!)).status()).toBe(404);
   expect((await page.request.get(`/api/documents/${id}/download`)).status()).toBe(404);

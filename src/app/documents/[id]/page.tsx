@@ -29,7 +29,8 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             <h1 className="mb-4 break-words font-serif text-3xl font-bold leading-tight text-[#2c2c2c] md:text-4xl">{document.title}</h1>
             <Button asChild variant="outline" size="sm"><a href={`/api/documents/${document.id}/download`}>下载原文件</a></Button>
           </header>
-          {parsed ? <MarkdownContent html={parsed.html} /> : <div className="post-content whitespace-pre-wrap break-words">{document.content}</div>}
+          {parsed && <TableOfContents headings={parsed.headings} variant="mobile" />}
+          {parsed ? <MarkdownContent html={parsed.html} /> : <div data-reading-content className="post-content whitespace-pre-wrap break-words">{document.content}</div>}
         </article>
         {parsed && <TableOfContents headings={parsed.headings} />}
       </div>
