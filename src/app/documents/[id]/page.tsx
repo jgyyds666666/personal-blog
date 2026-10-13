@@ -6,6 +6,7 @@ import { isAdminAuthenticated } from '@/lib/admin-auth';
 import { getPrivateDocument } from '@/lib/documents-service';
 import { renderMarkdown } from '@/lib/markdown';
 import { MarkdownContent } from '@/components/markdown-content';
+import { ReadingResume } from '@/components/reading-resume';
 import { ReadingProgress, TableOfContents } from '@/components/reading-tools';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +30,7 @@ export default async function DocumentPage({ params }: { params: Promise<{ id: s
             <h1 className="mb-4 break-words font-serif text-3xl font-bold leading-tight text-[#2c2c2c] md:text-4xl">{document.title}</h1>
             <Button asChild variant="outline" size="sm"><a href={`/api/documents/${document.id}/download`}>下载原文件</a></Button>
           </header>
+          <ReadingResume id={`document:${document.id}`} contentVersion={document.updated_at} />
           {parsed && <TableOfContents headings={parsed.headings} variant="mobile" />}
           {parsed ? <MarkdownContent html={parsed.html} /> : <div data-reading-content className="post-content whitespace-pre-wrap break-words">{document.content}</div>}
         </article>

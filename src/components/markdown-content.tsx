@@ -1,10 +1,15 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { copyText } from '@/lib/clipboard';
+import { ImageViewer, type PreviewImage } from '@/components/image-viewer';
 
 export function MarkdownContent({ html, className = 'post-content' }: { html: string; className?: string }) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const previewTrigger = useRef<HTMLButtonElement | null>(null);
+  const [previewImage, setPreviewImage] = useState<PreviewImage | null>(null);
+  // Preview state must not replace the HTML node containing enhanced tables, code and images.
+  const content = useMemo(() => <div ref={contentRef} data-reading-content className={className} dangerouslySetInnerHTML={{ __html: html }} />, [html, className]);
 
   useEffect(() => {
     const root = contentRef.current;
@@ -13,6 +18,18 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
     const tableCleanups: Array<() => void> = [];
     const copyTimers = new Set<number>();
     let disposed = false;
+
+    // Preserve images that are already links; other images become keyboard-accessible previews.
+    contentRoot.querySelectorAll<HTMLImageElement>('img').forEach((img) => {
+      if (img.closest('a, button')) return;
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'image-preview-trigger';
+      trigger.setAttribute('aria-label', `查看大图：${img.alt || '文章配图'}`);
+      trigger.setAttribute('aria-haspopup', 'dialog');
+      img.replaceWith(trigger);
+      trigger.appendChild(img);
+    });
 
     contentRoot.querySelectorAll<HTMLDivElement>('.table-scroll').forEach((scroller) => {
       const table = scroller.querySelector('table');
@@ -70,6 +87,12 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
     function handleClick(event: MouseEvent) {
       const target = event.target;
       if (!(target instanceof Element)) return;
+      const imageTrigger = target.closest<HTMLButtonElement>('.image-preview-trigger');
+      if (imageTrigger && contentRoot.contains(imageTrigger)) {
+        const img = imageTrigger.querySelector('img');
+        if (img) { previewTrigger.current = imageTrigger; setPreviewImage({ src: img.currentSrc || img.src, alt: img.alt }); }
+        return;
+      }
       const button = target.closest<HTMLButtonElement>('.code-copy-button');
       if (!button || !contentRoot.contains(button)) return;
       const pre = button.closest('.code-block-wrapper')?.querySelector('pre');
@@ -93,7 +116,7 @@ export function MarkdownContent({ html, className = 'post-content' }: { html: st
       tableCleanups.forEach((cleanup) => cleanup());
       copyTimers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [html]);
+  }, [html, className]);
 
-  return <div ref={contentRef} data-reading-content className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <>{content}<ImageViewer image={previewImage} onClose={() => setPreviewImage(null)} returnFocus={() => previewTrigger.current?.focus({ preventScroll: true })} /></>;
 }

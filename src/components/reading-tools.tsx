@@ -5,6 +5,7 @@ import { Check, ChevronRight, Copy, List } from 'lucide-react';
 import Link from 'next/link';
 import type { HeadingItem } from '@/lib/markdown';
 import { copyText } from '@/lib/clipboard';
+import { getReadingProgress } from '@/lib/reading-position';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
@@ -17,10 +18,7 @@ export function ReadingProgress() {
     if (!content) return;
     let frame = 0;
     const update = () => {
-      const bounds = content.getBoundingClientRect();
-      const start = Math.max(0, bounds.top + window.scrollY - 80);
-      const end = bounds.bottom + window.scrollY - window.innerHeight;
-      setProgress(end > start ? Math.min(100, Math.max(0, ((window.scrollY - start) / (end - start)) * 100)) : bounds.bottom <= window.innerHeight ? 100 : 0);
+      setProgress(getReadingProgress(content));
     };
     const schedule = () => { window.cancelAnimationFrame(frame); frame = window.requestAnimationFrame(update); };
     update();

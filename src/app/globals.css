@@ -200,6 +200,56 @@
   border-radius: 0.75rem;
 }
 
+.post-content .image-preview-trigger {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  margin: 1.5rem auto;
+  border-radius: 0.75rem;
+  cursor: zoom-in;
+}
+
+.post-content .image-preview-trigger img {
+  margin: 0;
+}
+
+.post-content .image-preview-trigger::after {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  background: #2c2c2c;
+  color: white;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  content: '点击放大';
+}
+
+.post-content .image-preview-trigger:focus-visible {
+  outline: 2px solid #b45309;
+  outline-offset: 3px;
+}
+
+.image-viewer {
+  display: flex;
+  flex-direction: column;
+  width: calc(100vw - 1rem);
+  max-width: 80rem;
+  height: 90dvh;
+  max-height: 90dvh;
+}
+
+.image-viewer-viewport {
+  flex: 1;
+}
+
+.image-viewer .image-viewer-canvas img {
+  max-width: none;
+}
+
 .post-content .table-scroll {
   max-width: 100%;
   overflow-x: auto;

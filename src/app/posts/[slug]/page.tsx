@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getPublishedPostNavigationItems, getPostBySlug } from '@/lib/posts-service';
 import { MarkdownContent } from '@/components/markdown-content';
+import { ReadingResume } from '@/components/reading-resume';
 import { CopyLinkButton, PostNavigation, ReadingProgress, TableOfContents } from '@/components/reading-tools';
 import { renderMarkdown } from '@/lib/markdown';
 import { absoluteUrl, SITE_AUTHOR, SITE_NAME } from '@/lib/site';
@@ -100,6 +101,7 @@ export default async function PostPage({ params }: PostPageProps) {
               ))}
             </div>
           </header>
+          <ReadingResume id={`post:${post.id}`} contentVersion={post.updated_at} />
           <TableOfContents headings={parsed.headings} variant="mobile" />
           <MarkdownContent html={parsed.html} />
           <PostNavigation

@@ -110,6 +110,13 @@ test('Word pictures are private; text stays literal; deletion revokes file acces
   expect((await page.request.get(imageUrl!)).status()).toBe(200);
   const guest = await playwright.request.newContext({ baseURL: 'http://127.0.0.1:5137' });
   expect((await guest.get(imageUrl!)).status()).toBe(401);
+  await page.locator('.image-preview-trigger').click();
+  const preview = page.getByRole('dialog');
+  await expect(preview.locator('img')).toBeVisible();
+  const previewUrl = await preview.locator('img').getAttribute('src');
+  expect(previewUrl).toContain(`/api/documents/${id}/assets/`);
+  expect((await guest.get(previewUrl!)).status()).toBe(401);
+  await preview.getByRole('button', { name: '关闭图片预览', exact: true }).click();
   await page.screenshot({ path: 'test-results/documents-word-reading.png', fullPage: true });
   await page.getByRole('link', { name: '返回首页', exact: false }).click();
   const card = page.locator('article').filter({ has: page.getByRole('heading', { name: 'Word 测试', exact: true }) });

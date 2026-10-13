@@ -11,10 +11,11 @@
     "lint:style": "stylelint \"src/**/*.css\"",
     "start": "bash ./scripts/start.sh",
     "test:markdown": "tsx scripts/test-markdown.ts",
+    "test:reading": "tsx scripts/test-reading.ts",
     "test:documents": "tsx scripts/test-documents.ts",
     "test:documents:e2e": "playwright test",
     "ts-check": "tsc -p tsconfig.json",
-    "validate": "pnpm ts-check && pnpm lint:build && pnpm lint:style && pnpm test:markdown && pnpm test:documents"
+    "validate": "pnpm ts-check && pnpm lint:build && pnpm lint:style && pnpm test:markdown && pnpm test:documents && pnpm test:reading"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
